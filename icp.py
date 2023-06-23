@@ -1,4 +1,8 @@
-# Credit: https://github.com/ClayFlannigan/icp
+"""
+ICP
+Copyright 2016, Clay Flannigan
+(https://github.com/ClayFlannigan/icp)
+"""
 
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
