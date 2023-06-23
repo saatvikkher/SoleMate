@@ -13,13 +13,14 @@ class Sole:
     coordinates should the shoe be a "Q" shoe aligned to a "K" shoe.
     '''
 
-    def __init__(self, tiff_path: str) -> None:
+    def __init__(self, image_path: str, border_width: int = 0) -> None:
         # accessing metadata from csv in util.py
-        row = METADATA[METADATA['File Name'] == tiff_path[13:]]
+        row = METADATA[METADATA['File Name'] == image_path[13:]]
 
         # metadata fields
         self._file_name = row['File Name'].iloc[0]
         self._scan_method = row['Scan Method'].iloc[0]
+        self._number = row['Shoe Number'].iloc[0]
         self._model = row['Shoe Make/Model'].iloc[0]
         self._size = row['Shoe Size'].iloc[0]
         self._color = row['Shoe Color'].iloc[0]
@@ -33,7 +34,7 @@ class Sole:
         self._aligned = None
 
         # original coordinates field, set using read tiff helper method
-        self._coords = self._read_tiff(tiff_path)
+        self._coords = self._image_to_coords(image_path, border_width)
     
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -47,6 +48,11 @@ class Sole:
     def scan_method(self) -> str:
         '''Getter method for shoeprint scan method'''
         return self._scan_method
+    
+    @property
+    def number(self) -> int:
+        '''Getter method for shoe number'''
+        return self._number
 
     @property
     def model(self) -> str:
@@ -107,7 +113,7 @@ class Sole:
         return self._coords
 
 
-    def _read_tiff(self, link: str) -> pd.DataFrame:
+    def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
         '''Helper method which takes an image's file address and converts it 
         to a set of x,y coordinates using edge detection
         '''
@@ -125,7 +131,6 @@ class Sole:
 
         # extract image dimensions and crop image
         image_height, image_width = np.array(inv).shape
-        border_width = 160 # CHANGE TO NOT HARD-CODED
         crop = inv.crop((border_width, border_width, image_width-border_width, 
                          image_height-border_width))
         crop_arr = np.array(crop)

@@ -15,13 +15,13 @@ class SolePairCompare:
 
     This class also provides methods for intermediate steps in this pipeline.
     '''
-    def __init__(self, pair: SolePair, downsample_rate=0.2, random_seed=47) -> None:
+    def __init__(self, pair: SolePair, downsample_rate=0.2, icp_downsample_rate=1.0, random_seed=47) -> None:
         '''
         Inputs:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
-        self.Q_coords, self.K_coords = pair.icp_transform()
+        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate)
         self.Q_coords = self.Q_coords.sample(frac=downsample_rate, random_state=random_seed)
         self.K_coords = self.K_coords.sample(frac=downsample_rate, random_state=random_seed)
         self.pair = pair
@@ -94,7 +94,7 @@ class SolePairCompare:
                                     point['y'], ht, threshold), axis=1).sum()
         return overlap_count/len(df1)
     
-    def min_dist(self, Q_as_base=True, sample_num=500, random_seed=1):
+    def min_dist(self, Q_as_base=True):
         '''
         (Similarity metric) 
 
@@ -109,8 +109,6 @@ class SolePairCompare:
 
         Inputs:
             Q_as_base (bool): if Q is the base dataframe, defaults to True
-            sample_num (int): number of points sampled from base dataframe
-            random_seed (int)
         
         Returns:
             (dict): a dictionary of statistics with keys "mean", "std", "0.1", 
@@ -130,7 +128,7 @@ class SolePairCompare:
         # We assume the column names are "x" and "y"
         points = df1[["x", "y"]].values
         kdtree = KDTree(points)
-        query_points = df2.sample(n=sample_num, random_state=random_seed)[['x', 'y']].values
+        query_points = df2[['x', 'y']].values
         
         for query_point in query_points:
             dist, _ = kdtree.query(query_point)
@@ -152,8 +150,8 @@ class SolePairCompare:
 
 if __name__ == "__main__":
     t0 = time.time()
-    Q = Sole("2DScanImages/001351R_20171031_2_1_1_csafe_bpbryson.tiff")
-    K = Sole("2DScanImages/001351R_20171031_2_1_2_csafe_bpbryson.tiff")
+    Q = Sole("2DScanImages/001351R_20171031_2_1_1_csafe_bpbryson.tiff", border_width=160)
+    K = Sole("2DScanImages/001351R_20171031_2_1_2_csafe_bpbryson.tiff", border_width=160)
     t1 = time.time()
     # print("Time for 2 Soles(): " + str(t1-t0))
     Q.plot()
