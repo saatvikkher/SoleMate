@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 from scipy.spatial import KDTree
+from scipy.stats import kurtosis
 import math
 import time
 from solepair import SolePair
@@ -103,7 +104,8 @@ class SolePairCompare:
         kdtree closest neighbor algorithm. 
         
         It outputs distribution statistics including the average, 
-        standard deviation, and 0.1, 0.25, 0.5, 0.75, 0.9 quantile values.
+        standard deviation, and 0.1, 0.25, 0.5, 0.75, 0.9 quantile values, as well as
+        kurtosis.
 
         Inputs:
             Q_as_base (bool): if Q is the base dataframe, defaults to True
@@ -112,7 +114,7 @@ class SolePairCompare:
         
         Returns:
             (dict): a dictionary of statistics with keys "mean", "std", "0.1", 
-                    "0.25", "0.5", "0.75", "0.9"
+                    "0.25", "0.5", "0.75", "0.9", "kurtosis"
         '''
         
         # If Q_as_base == True, Q is the shoe we sample from
@@ -143,6 +145,7 @@ class SolePairCompare:
         min_dists_dict["0.5"] = np.quantile(min_dists_arr, 0.5)
         min_dists_dict["0.75"] = np.quantile(min_dists_arr, 0.75)
         min_dists_dict["0.9"] = np.quantile(min_dists_arr, 0.9)
+        min_dists_dict["kurtosis"] = kurtosis(min_dists_arr)
         
         return min_dists_dict
 
