@@ -1,17 +1,19 @@
 import pandas as pd
 import numpy as np
+import time
 
 METADATA = pd.read_csv("2DScanImages/Image-Info.csv")
+train = pd.read_csv("train_data.csv")
+test = pd.read_csv("test_data.csv")
 
-
-def _create_km_pairs():
+def _create_km_pairs(df, name: str):
     '''
     Documenting Known Mated Pairs data process
     '''
-    df = METADATA.sort_values('Shoe Number')
 
     kms = []
-
+    
+    df = df.sort_values(by = 'Shoe Number')
     for i in range(len(df)):
         for j in range(i+1,len(df)):
             if (df.iloc[i].loc['Shoe Number'] == df.iloc[j].loc['Shoe Number'] and
@@ -25,16 +27,26 @@ def _create_km_pairs():
 
     kms_df = pd.DataFrame(kms)
     kms_df.rename(columns = {0: 'q', 1 : 'k'}, inplace=True)
-    kms_df.to_csv("KM_pairs.csv", index=False)
+    kms_df.to_csv(name, index=False)
 
-def _create_knm_pairs(size: int = 2407):
+t1 = time.time()
+_create_km_pairs(train, "KM_train.csv")
+t0 = time.time()
+print(t0-t1)
+
+t1 = time.time()
+_create_km_pairs(test, "KM_test.csv")
+t0 = time.time()
+print(t0-t1)
+
+def _create_knm_pairs(df, name: str, size: int = 2407):
     '''
     Documenting Known Non-Mated Pairs data process
     '''
-    df = METADATA
     knms = []
 
     for i in range(len(df)):
+        print(i)
         non_mated_row = np.random.randint(len(df))
 
         while (df.iloc[i].loc['File Name'] == df.iloc[non_mated_row].loc['File Name'] or
@@ -49,7 +61,17 @@ def _create_knm_pairs(size: int = 2407):
     knms_df = pd.DataFrame(knms).sample(size)
     knms_df = knms_df.reset_index(drop=True)
     knms_df.rename(columns = {0: 'q', 1 : 'k'}, inplace=True)
-    knms_df.to_csv("KNM_pairs.csv", index=False)
+    knms_df.to_csv(name, index=False)
+
+t1 = time.time()
+_create_knm_pairs(train, "KNM_train.csv", 1734)
+t0 = time.time()
+print(t0-t1)
+
+t1 = time.time()
+_create_knm_pairs(test, "KNM_test.csv", 673)
+t0 = time.time()
+print(t0-t1)
 
     # conditions to satisfy knm: different file name & same size & same model & same foot & different file name;
 
