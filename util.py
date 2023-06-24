@@ -3,8 +3,6 @@ import numpy as np
 import time
 
 METADATA = pd.read_csv("2DScanImages/Image-Info.csv")
-train = pd.read_csv("train_data.csv")
-test = pd.read_csv("test_data.csv")
 
 def _create_km_pairs(df, name: str):
     '''
@@ -29,15 +27,6 @@ def _create_km_pairs(df, name: str):
     kms_df.rename(columns = {0: 'q', 1 : 'k'}, inplace=True)
     kms_df.to_csv(name, index=False)
 
-t1 = time.time()
-_create_km_pairs(train, "KM_train.csv")
-t0 = time.time()
-print(t0-t1)
-
-t1 = time.time()
-_create_km_pairs(test, "KM_test.csv")
-t0 = time.time()
-print(t0-t1)
 
 def _create_knm_pairs(df, name: str, size: int = 2407):
     '''
@@ -62,19 +51,3 @@ def _create_knm_pairs(df, name: str, size: int = 2407):
     knms_df = knms_df.reset_index(drop=True)
     knms_df.rename(columns = {0: 'q', 1 : 'k'}, inplace=True)
     knms_df.to_csv(name, index=False)
-
-t1 = time.time()
-_create_knm_pairs(train, "KNM_train.csv", 1734)
-t0 = time.time()
-print(t0-t1)
-
-t1 = time.time()
-_create_knm_pairs(test, "KNM_test.csv", 673)
-t0 = time.time()
-print(t0-t1)
-
-    # conditions to satisfy knm: different file name & same size & same model & same foot & different file name;
-
-
-if __name__ == "__main__":
-    _create_km_pairs()
