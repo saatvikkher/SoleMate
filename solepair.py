@@ -7,11 +7,12 @@ from sole import Sole
 from icp import icp
 
 class SolePair():
-    def __init__(self, Q: Sole, K: Sole, mated: bool, aligned = False) -> None:
+    def __init__(self, Q: Sole, K: Sole, mated: bool, aligned = False, T: np.ndarray= np.identity(3, int)) -> None:
         self._Q = Q 
         self._K = K 
         self._mated = mated
         self._aligned = aligned
+        self._T = T
 
     @property
     def Q(self) -> Sole:
@@ -28,10 +29,18 @@ class SolePair():
     @property
     def aligned(self) -> bool:
         return self._aligned
+    
+    @property
+    def T(self) -> bool:
+        return self._T
 
     @aligned.setter
     def aligned(self, value: bool) -> None:
         self._aligned = value
+
+    @T.setter
+    def T(self, value: np.ndarray) -> None:
+        self._T = value
 
     def _equalize(self) -> np.ndarray | np.ndarray:
         q_pts = np.array(self.Q.coords)
@@ -60,10 +69,11 @@ class SolePair():
         q_pts = q_pts[sample_indices_q]
         k_pts = k_pts[sample_indices_k]
 
-        T,_,i = icp(q_pts,k_pts, max_iterations=max_iterations, tolerance=tolerance)
-        transformed_q = pd.DataFrame(self._transform(self.Q.coords, T))
-        self.Q.aligned = transformed_q.rename(columns = {0: 'x', 1 : 'y'})
-        return self.Q.aligned, self.K.coords
+        self.T,_,i = icp(q_pts,k_pts, max_iterations=max_iterations, tolerance=tolerance)
+        transformed_q = pd.DataFrame(self._transform(self.Q.coords, self.T))
+        self.Q.aligned_coordinates = transformed_q.rename(columns = {0: 'x', 1 : 'y'})
+        self.aligned = True
+        return self.Q.aligned_coordinates, self.K.coords
     
     def plot(self, size: float = 0.5, aligned: bool = False):
         '''
@@ -72,7 +82,7 @@ class SolePair():
         '''
 
         if aligned:
-            plt.scatter(self.Q.aligned.x, self.Q.aligned.y, s = size, label="Aligned Q")
+            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y, s = size, label="Aligned Q")
         else:
             plt.scatter(self.Q.coords.x, self.Q.coords.y, s = size, label="Q")
         
@@ -81,19 +91,4 @@ class SolePair():
         plt.legend()
 
         plt.show()
-    
-if __name__ == "__main__":
-    Q = Sole("2DScanImages/001351R_20171031_2_1_1_csafe_bpbryson.tiff")
-    K = Sole("2DScanImages/001351R_20171031_2_1_2_csafe_bpbryson.tiff")
-
-    pair = SolePair(Q, K, mated=True)
-    pair.plot()
-    
-    pair.icp_transform()
-    pair.plot(aligned=True)
-    
-    
-
-
-    
 

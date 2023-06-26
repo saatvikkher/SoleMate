@@ -31,9 +31,9 @@ class Sole:
         self._worker = row['Worker Names'].iloc[0]
 
         # optional aligned coordinates field
-        self._aligned = None
+        self._aligned_coordinates = None
 
-        # original coordinates field, set using read tiff helper method
+        # original coordinates field, set using read image edge detection helper method
         self._coords = self._image_to_coords(image_path, border_width)
     
     def __str__(self):
@@ -95,15 +95,15 @@ class Sole:
         return self._worker
 
     @property
-    def aligned(self) -> pd.DataFrame:
+    def aligned_coordinates(self) -> pd.DataFrame:
         '''Getter method for dataframe of aligned shoeprint coordinates'''
-        return self._aligned
+        return self._aligned_coordinates
 
-    @aligned.setter
-    def aligned(self, value) -> None:
+    @aligned_coordinates.setter
+    def aligned_coordinates(self, value) -> None:
         '''Setter method for dataframe of aligned shoeprint coordinates'''
         try:
-            self._aligned = value
+            self._aligned_coordinates = value
         except Exception as e:
             print("Must be a pandas DataFrame:", str(e))
 
@@ -151,6 +151,3 @@ class Sole:
         plt.tight_layout()
 
         plt.show()
-        
-if __name__ == "__main__":
-    pass
