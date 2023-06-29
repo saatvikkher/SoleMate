@@ -81,12 +81,12 @@ class SolePair():
             aligned: (bool) indicating if you want to access the aligned image
         '''
 
+        plt.scatter(self.K.coords.x, self.K.coords.y, s = size, label = "K", color = "#500082")
+
         if aligned:
-            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y, s = size, label="Aligned Q")
+            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y, s=size, label="Aligned Q", color="#FFBE0A")
         else:
-            plt.scatter(self.Q.coords.x, self.Q.coords.y, s = size, label="Q")
-        
-        plt.scatter(self.K.coords.x, self.K.coords.y, s = size, label = "K")
+            plt.scatter(self.Q.coords.x, self.Q.coords.y, s=size, label="Q", color="#FFBE0A")
 
         plt.legend()
 

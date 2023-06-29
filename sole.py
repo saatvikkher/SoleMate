@@ -1,5 +1,3 @@
-import cv2 as cv
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -13,7 +11,7 @@ class Sole:
     coordinates should the shoe be a "Q" shoe aligned to a "K" shoe.
     '''
 
-    def __init__(self, image_path: str, border_width: int = 0) -> None:
+    def __init__(self, image_path: str = None, border_width: int = 0, is_image: bool = True, coords: pd.DataFrame = None) -> None:
         # accessing metadata from csv in util.py
         row = METADATA[METADATA['File Name'] == image_path[13:]]
 
@@ -33,8 +31,11 @@ class Sole:
         # optional aligned coordinates field
         self._aligned_coordinates = None
 
-        # original coordinates field, set using read image edge detection helper method
-        self._coords = self._image_to_coords(image_path, border_width)
+        if is_image:
+            # original coordinates field, set using read image edge detection helper method
+            self._coords = self._image_to_coords(image_path, border_width)
+        else:
+            self._coords = coords
     
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -111,6 +112,14 @@ class Sole:
     def coords(self) -> pd.DataFrame:
         '''Getter method for dataframe of original shoeprint coordinates'''
         return self._coords
+    
+    @coords.setter
+    def coords(self, value) -> None:
+        '''Setter method for dataframe of coordinates'''
+        try:
+            self._coords = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
 
 
     def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
@@ -142,7 +151,7 @@ class Sole:
         
         return df
     
-    def plot(self, color = "red", size: float = 0.5):
+    def plot(self, color = "#500082", size: float = 0.5):
 
         # Plot scatter plot 1
         plt.scatter(self.coords.x, self.coords.y, color=color, s = size)
