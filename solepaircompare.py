@@ -17,22 +17,33 @@ class SolePairCompare:
     This class also provides methods for intermediate steps in this pipeline.
     '''
 
-    def __init__(self, pair: SolePair, downsample_rate=0.2, icp_downsample_rate=1.0, random_seed=47,
+    def __init__(self, 
+                 pair: SolePair, 
+                 downsample_rate=0.2, 
+                 icp_downsample_rate=1.0, 
+                 random_seed=47,
                  shift_left=False,
                  shift_right=False,
                  shift_up=False,
-                 shift_down=False) -> None:
+                 shift_down=False,
+                 two_way=False) -> None:
         '''
         Inputs:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
-        self.Q_coords, self.K_coords = pair.icp_transform(
-            downsample_rate=icp_downsample_rate, shift_left=shift_left, shift_right=shift_right, shift_up=shift_up, shift_down=shift_down)
-        self.Q_coords = self.Q_coords.sample(
-            frac=downsample_rate, random_state=random_seed)
-        self.K_coords = self.K_coords.sample(
-            frac=downsample_rate, random_state=random_seed)
+        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate, 
+                                                          shift_left=shift_left, 
+                                                          shift_right=shift_right, 
+                                                          shift_up=shift_up, 
+                                                          shift_down=shift_down,
+                                                          two_way=two_way)
+        
+        self.Q_coords = self.Q_coords.sample(frac=downsample_rate, 
+                                             random_state=random_seed)
+        
+        self.K_coords = self.K_coords.sample(frac=downsample_rate, 
+                                             random_state=random_seed)
         self.pair = pair
 
     def _df_to_hash(self, df):

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import PIL.ImageOps
 from PIL import Image, ImageFilter
-from util import METADATA
+from util import BLACK_WHITE_THRESHOLD, WILLIAMS_PURPLE
 
 class Sole:
     ''' Class to create a shoeprint object containing metadata (e.g., make, 
@@ -11,24 +11,28 @@ class Sole:
     coordinates should the shoe be a "Q" shoe aligned to a "K" shoe.
     '''
 
-    def __init__(self, image_path: str = None, border_width: int = 0, is_image: bool = True, coords: pd.DataFrame = None) -> None:
+    def __init__(self, 
+                 image_path: str = None, 
+                 border_width: int = 0, 
+                 is_image: bool = True, 
+                 coords: pd.DataFrame = None) -> None:
         # accessing metadata from csv in util.py
-        row = METADATA[METADATA['File Name'] == image_path[13:]]
+        # row = METADATA[METADATA['File Name'] == image_path[13:]]
 
         # metadata fields
-        self._file_name = row['File Name'].iloc[0]
-        self._scan_method = row['Scan Method'].iloc[0]
-        self._number = row['Shoe Number'].iloc[0]
-        self._model = row['Shoe Make/Model'].iloc[0]
-        self._size = row['Shoe Size'].iloc[0]
-        self._color = row['Shoe Color'].iloc[0]
-        self._foot = row['Foot'].iloc[0]
-        self._img = row['Image Number'].iloc[0]
-        self._repl = row['Replicate Number'].iloc[0]
-        self._visit = row['Visit Number'].iloc[0]
-        self._worker = row['Worker Names'].iloc[0]
+        # self._file_name = row['File Name'].iloc[0]
+        # self._scan_method = row['Scan Method'].iloc[0]
+        # self._number = row['Shoe Number'].iloc[0]
+        # self._model = row['Shoe Make/Model'].iloc[0]
+        # self._size = row['Shoe Size'].iloc[0]
+        # self._color = row['Shoe Color'].iloc[0]
+        # self._foot = row['Foot'].iloc[0]
+        # self._img = row['Image Number'].iloc[0]
+        # self._repl = row['Replicate Number'].iloc[0]
+        # self._visit = row['Visit Number'].iloc[0]
+        # self._worker = row['Worker Names'].iloc[0]
 
-        # optional aligned coordinates field
+        self._file_name = None
         self._aligned_coordinates = None
 
         if is_image:
@@ -45,55 +49,60 @@ class Sole:
         '''Getter method for shoeprint file_name'''
         return self._file_name
     
-    @property
-    def scan_method(self) -> str:
-        '''Getter method for shoeprint scan method'''
-        return self._scan_method
+    @file_name.setter
+    def file_name(self, value) -> None:
+        '''Setter method for file_name'''
+        self._file_name = value
     
-    @property
-    def number(self) -> int:
-        '''Getter method for shoe number'''
-        return self._number
+    # @property
+    # def scan_method(self) -> str:
+    #     '''Getter method for shoeprint scan method'''
+    #     return self._scan_method
+    
+    # @property
+    # def number(self) -> int:
+    #     '''Getter method for shoe number'''
+    #     return self._number
 
-    @property
-    def model(self) -> str:
-        '''Getter method for shoe model'''
-        return self._model
+    # @property
+    # def model(self) -> str:
+    #     '''Getter method for shoe model'''
+    #     return self._model
 
-    @property
-    def size(self) -> str:
-        '''Getter method for shoe size'''
-        return self._size
+    # @property
+    # def size(self) -> str:
+    #     '''Getter method for shoe size'''
+    #     return self._size
 
-    @property
-    def color(self) -> str:
-        '''Getter method for shoe color'''
-        return self._color
+    # @property
+    # def color(self) -> str:
+    #     '''Getter method for shoe color'''
+    #     return self._color
 
-    @property
-    def foot(self) -> str:
-        '''Getter method for shoe foot (left/right)'''
-        return self._foot
+    # @property
+    # def foot(self) -> str:
+    #     '''Getter method for shoe foot (left/right)'''
+    #     return self._foot
 
-    @property
-    def img(self):
-        '''Getter method for shoeprint scan image number'''
-        return self._img
+    # @property
+    # def img(self):
+    #     '''Getter method for shoeprint scan image number'''
+    #     return self._img
 
-    @property
-    def repl(self):
-        '''Getter method for shoeprint scan replicate number'''
-        return self._repl
+    # @property
+    # def repl(self):
+    #     '''Getter method for shoeprint scan replicate number'''
+    #     return self._repl
 
-    @property
-    def visit(self):
-        '''Getter method for shoeprint scan visit number'''
-        return self._visit
+    # @property
+    # def visit(self):
+    #     '''Getter method for shoeprint scan visit number'''
+    #     return self._visit
 
-    @property
-    def worker(self) -> str:
-        '''Getter method for worker who scanned shoe'''
-        return self._worker
+    # @property
+    # def worker(self) -> str:
+    #     '''Getter method for worker who scanned shoe'''
+    #     return self._worker
 
     @property
     def aligned_coordinates(self) -> pd.DataFrame:
@@ -145,13 +154,13 @@ class Sole:
         crop_arr = np.array(crop)
 
         # change from grayscale to binary black/white to create coordinates df
-        crop_arr = crop_arr < 127
+        crop_arr = crop_arr < BLACK_WHITE_THRESHOLD
         rows, cols = np.where(crop_arr)
         df = pd.DataFrame({"x": rows, "y": cols})
         
         return df
     
-    def plot(self, color = "#500082", size: float = 0.5):
+    def plot(self, color = WILLIAMS_PURPLE, size: float = 0.5):
 
         # Plot scatter plot 1
         plt.scatter(self.coords.x, self.coords.y, color=color, s = size)

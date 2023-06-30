@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import random
-import math
 from sole import Sole
 from icp import icp
+from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 class SolePair():
     def __init__(self, Q: Sole, K: Sole, mated: bool, aligned = False, T: np.ndarray= np.identity(3, int)) -> None:
@@ -59,6 +58,31 @@ class SolePair():
     
         return transformed_q
     
+    def _reversed_T(self, T: np.ndarray) -> np.ndarray:
+        '''
+        Input:
+            T: original homogeneous transformation matrix as a 3x3 np.ndarray
+        
+        Return:
+            The opposite effect of T
+        '''
+
+        # Extract the upper-left 2x2 submatrix
+        rotation_matrix = T[:2, :2]
+
+        # Compute the inverse of the rotation matrix
+        inverse_rotation_matrix = np.linalg.inv(rotation_matrix)
+
+        # Extract and reverse the translation vector
+        reversed_translation_vector = -1 * T[:2, 2]
+
+        # Create the reversed 2D homogeneous transformation matrix
+        reversed_homogeneous_matrix = np.vstack((np.hstack((inverse_rotation_matrix, 
+                                                            reversed_translation_vector.reshape(2, 1))),
+                                                [0, 0, 1]))
+        
+        return reversed_homogeneous_matrix
+    
     
     def icp_transform(self, max_iterations: int = 10000, 
                       tolerance: float = 0.00001, 
@@ -67,19 +91,17 @@ class SolePair():
                       shift_left=False, 
                       shift_right=False, 
                       shift_up=False, 
-                      shift_down=False) -> pd.DataFrame | pd.DataFrame:
+                      shift_down=False,
+                      two_way=False) -> pd.DataFrame | pd.DataFrame:
         '''
         Default: do 1 icp with no initial shift
         The user can specify up to four additional icp trials with differnt initial shifts
         '''
-        print("Q coords before: ", self.Q.coords)
 
-        # Default no shift
+        # Default: no shift
         shifts = [(0, 0)]
-        
 
         range = 2 * max((self.Q.coords.x.max() - self.Q.coords.x.min()), (self.Q.coords.y.max() - self.Q.coords.y.min()))
-        print("range: ", range)
         
         if shift_left:
             shifts.append((-range, 0))
@@ -95,27 +117,38 @@ class SolePair():
         best_T = None
         best_rmse = np.Inf 
         best_shift = None
+        best_apply_to_q = None # record apply_to_q for the transformation that got the best rmse
 
         for shift in shifts:
             # apply shift
             self.Q.coords.loc[:,"x"] += shift[0]
             self.Q.coords.loc[:,"y"] += shift[1]
             
-            T, rmse = self._icp_helper(max_iterations=max_iterations, tolerance=tolerance, downsample_rate=downsample_rate, random_seed=random_seed)
+            T, rmse, apply_to_q = self._icp_helper(max_iterations=max_iterations,
+                                                   tolerance=tolerance,
+                                                   downsample_rate=downsample_rate,
+                                                   random_seed=random_seed,
+                                                   two_way=two_way)
             print("RMSE calculation: ", rmse)
             if rmse < best_rmse:
                 best_rmse = rmse
                 best_T = T
                 best_shift = shift
+                best_apply_to_q = apply_to_q
                 print("Best RMSE: ", best_rmse)
 
             # reverse shift
             self.Q.coords.loc[:,"x"] -= shift[0]
             self.Q.coords.loc[:,"y"] -= shift[1]
-        
-        self.T = best_T
 
         print("Q coords: ", self.Q.coords)
+
+        # If we are not applying the transformation matrix to Q,
+        # we get the reversed T first and apply it to Q later.
+        if not best_apply_to_q:
+            best_T = self._reversed_T(best_T)
+
+        self.T = best_T
 
         # Apply the best_shift
         self.Q.coords.loc[:,"x"] += best_shift[0]
@@ -135,7 +168,8 @@ class SolePair():
     def _icp_helper(self, max_iterations: int = 10000, 
                       tolerance: float = 0.00001, 
                       downsample_rate: float = 1.0, 
-                      random_seed: int = 47):
+                      random_seed: int = 47,
+                      two_way: bool = False):
         
         q_pts, k_pts = self._equalize()
         np.random.seed(random_seed)
@@ -145,25 +179,43 @@ class SolePair():
         q_pts = q_pts[sample_indices_q]
         k_pts = k_pts[sample_indices_k]
 
-        T, distances, _ = icp(q_pts,k_pts, max_iterations=max_iterations, tolerance=tolerance)
+        T_qk, distances_qk, _ = icp(q_pts,k_pts, 
+                                    max_iterations=max_iterations, 
+                                    tolerance=tolerance)
 
         # RMSE (Root Mean Squared Error) calc
-        rmse = np.sqrt(np.mean(distances)**2)
+        rmse_qk = np.sqrt(np.mean(distances_qk)**2)
 
-        return T, rmse
+        apply_to_q = True
+
+        if two_way:
+            T_kq, distances_kq, _ = icp(k_pts,q_pts, 
+                                        max_iterations=max_iterations, 
+                                        tolerance=tolerance)
+            
+            rmse_kq = np.sqrt(np.mean(distances_kq)**2)
+            if rmse_kq < rmse_qk:
+                apply_to_q = False
+                return T_kq, rmse_kq, apply_to_q
+
+        return T_qk, rmse_qk, apply_to_q
     
-    def plot(self, size: float = 0.5, aligned: bool = False):
+    def plot(self, 
+             size: float=0.1, 
+             aligned: bool=False, 
+             color_q=WILLIAMS_GOLD, 
+             color_k=WILLIAMS_PURPLE):
         '''
         Inputs:
             aligned: (bool) indicating if you want to access the aligned image
         '''
 
-        plt.scatter(self.K.coords.x, self.K.coords.y, s = size, label = "K", color = "#500082")
+        plt.scatter(self.K.coords.x, self.K.coords.y, s=size, label="K", color=color_k)
 
         if aligned:
-            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y, s=size, label="Aligned Q", color="#FFBE0A")
+            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y, s=size, label="Aligned Q", color=color_q)
         else:
-            plt.scatter(self.Q.coords.x, self.Q.coords.y, s=size, label="Q", color="#FFBE0A")
+            plt.scatter(self.Q.coords.x, self.Q.coords.y, s=size, label="Q", color=color_q)
 
         plt.legend()
 

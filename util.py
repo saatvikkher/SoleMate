@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
-import time
 
 METADATA = pd.read_csv("2DScanImages/Image-Info.csv")
+BLACK_WHITE_THRESHOLD = 85 # Bottom third of grayscale: 255 / 3 = 85
+WILLIAMS_PURPLE = "#500082"
+WILLIAMS_GOLD = "#FFBE0A"
 
 def _create_km_pairs(df, name: str):
     '''
