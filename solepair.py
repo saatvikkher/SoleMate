@@ -111,8 +111,6 @@ class SolePair():
             shifts.append((0, -range))
         if shift_up:
             shifts.append((0, range))
-        
-        print("SHIFT: ", shifts)
 
         best_T = None
         best_rmse = np.Inf 
@@ -129,19 +127,15 @@ class SolePair():
                                                    downsample_rate=downsample_rate,
                                                    random_seed=random_seed,
                                                    two_way=two_way)
-            print("RMSE calculation: ", rmse)
             if rmse < best_rmse:
                 best_rmse = rmse
                 best_T = T
                 best_shift = shift
                 best_apply_to_q = apply_to_q
-                print("Best RMSE: ", best_rmse)
 
             # reverse shift
             self.Q.coords.loc[:,"x"] -= shift[0]
             self.Q.coords.loc[:,"y"] -= shift[1]
-
-        print("Q coords: ", self.Q.coords)
 
         # If we are not applying the transformation matrix to Q,
         # we get the reversed T first and apply it to Q later.
