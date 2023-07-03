@@ -172,8 +172,8 @@ class SolePairCompare:
 
     def _hierarchical_cluster(self, df: pd.DataFrame, n_clusters: int) -> pd.DataFrame:
         '''
-        This function takes in pandas DataFrame and runs hierarchical clustering on them.
-        It returns the centroid points of the hierarchical clustering.
+        This function takes in pandas DataFrame and runs hierarchical clustering
+        on them. It returns the centroid points of the hierarchical clustering.
         
         Inputs:
             data (np.array, shape of nx2)
@@ -195,7 +195,8 @@ class SolePairCompare:
 
     def _kmeans_cluster(self, df: pd.DataFrame, init: pd.DataFrame, n_clusters: int):
         '''
-        Runs kmeans clustering, with n_clusters amount of clusters and given initial points. 
+        Runs kmeans clustering, with n_clusters amount of clusters and given 
+        initial points. 
 
         Inputs:
             df: x, y coordinates of a shoe
@@ -222,13 +223,14 @@ class SolePairCompare:
 
     def _centroid_distance_metric(self, centroids_a: pd.DataFrame, centroids_b: pd.DataFrame) -> float:
         '''
-        Computes the centroid distance metric. Given two sets of centroids, compute the distance
-        between each paired centroid. Then, compute the rmse of these distances. Since rmse is 
-        always postive, centroids_a can be either shoe Q or shoe K.
+        Computes the centroid distance metric. Given two sets of centroids, 
+        compute the distance between each paired centroid. Then, compute the 
+        rmse of these distances. Since rmse is always postive, centroids_a can 
+        be either shoe Q or shoe K.
 
         Inputs:
-            centroids_a: dataframe of n_clusters points, has 2 columns "x" and "y"
-            centorids_b: dataframe of n_clusters points, has 2 columns "x" and "y"
+            centroids_a: dataframe of n_clusters points, has columns "x" and "y"
+            centorids_b: dataframe of n_clusters points, has columns "x" and "y"
         
         Returns:
             rmse (float)
@@ -244,7 +246,6 @@ class SolePairCompare:
         rmse = math.sqrt(mean_squared_distance)
         
         return rmse
-
     
     def _cluster_prop_metric(self, df_a: pd.DataFrame, df_b: pd.DataFrame, n_clusters: int) -> float:
         
