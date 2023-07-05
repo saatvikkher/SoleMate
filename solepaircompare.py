@@ -22,7 +22,7 @@ class SolePairCompare:
 
     def __init__(self, 
                  pair: SolePair, 
-                 downsample_rate=0.2, 
+                 downsample_rate=1.0, 
                  icp_downsample_rate=1.0, 
                  random_seed=47,
                  shift_left=False,
@@ -35,18 +35,20 @@ class SolePairCompare:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
-        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate, 
-                                                          shift_left=shift_left, 
-                                                          shift_right=shift_right, 
-                                                          shift_up=shift_up, 
-                                                          shift_down=shift_down,
-                                                          two_way=two_way)
+        Q_coords, K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate, 
+                                                shift_left=shift_left, 
+                                                shift_right=shift_right, 
+                                                shift_up=shift_up, 
+                                                shift_down=shift_down,
+                                                two_way=two_way)
         
-        self.Q_coords = self.Q_coords.sample(frac=downsample_rate, 
-                                             random_state=random_seed)
+        self.Q_coords = Q_coords.sample(frac=downsample_rate, 
+                                        random_state=random_seed, 
+                                        replace=False)
         
-        self.K_coords = self.K_coords.sample(frac=downsample_rate, 
-                                             random_state=random_seed)
+        self.K_coords = K_coords.sample(frac=downsample_rate, 
+                                        random_state=random_seed,
+                                        replace=False)
         self.pair = pair
 
     def _df_to_hash(self, df):
@@ -113,8 +115,9 @@ class SolePairCompare:
             df2 = self.Q_coords.round().astype(int)
 
         ht = self._df_to_hash(df2)
-        overlap_count = df1.apply(lambda point: self._is_overlap(point['x'],
-                                                                 point['y'], ht, threshold), axis=1).sum()
+        print(df2)
+        print(df1)
+        overlap_count = df1.apply(lambda point: self._is_overlap(point['x'], point['y'], ht, threshold), axis=1).sum()
         return overlap_count/len(df1)
 
     def min_dist(self, Q_as_base=True):
