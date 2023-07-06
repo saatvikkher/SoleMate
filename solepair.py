@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sole import Sole
-from icp import icp
+from icp import icp, nearest_neighbor
 from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 
@@ -129,8 +129,6 @@ class SolePair():
             best_T = np.linalg.inv(best_T)
 
         self.T = best_T
-
-        #print("self.T: ", self.T)
 
         # Apply the best_shift
         self.Q.coords.loc[:, "x"] += best_shift[0]
