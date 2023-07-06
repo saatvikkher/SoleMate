@@ -32,7 +32,7 @@ class SolePairCompare:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
-        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
+        self.Q_coords, self.K_coords, self._rmse = pair.icp_transform(downsample_rate=icp_downsample_rate,
                                                           shift_left=shift_left,
                                                           shift_right=shift_right,
                                                           shift_up=shift_up,
@@ -45,6 +45,10 @@ class SolePairCompare:
         self.K_coords = self.K_coords.sample(frac=downsample_rate,
                                              random_state=random_seed)
         self.pair = pair
+    
+    @property
+    def rmse(self) -> float:
+        return float(self._rmse)
 
     def _df_to_hash(self, df):
         '''

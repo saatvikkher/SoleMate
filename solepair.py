@@ -137,7 +137,7 @@ class SolePair():
         self.Q.coords.loc[:, "x"] -= best_shift[0]
         self.Q.coords.loc[:, "y"] -= best_shift[1]
 
-        return self.Q.aligned_coordinates, self.K.coords
+        return self.Q.aligned_coordinates, self.K.coords, best_rmse
 
     def _icp_helper(self, max_iterations: int = 10000,
                     tolerance: float = 0.00001,
