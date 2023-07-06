@@ -5,16 +5,17 @@ import PIL.ImageOps
 from PIL import Image, ImageFilter
 from util import BLACK_WHITE_THRESHOLD, WILLIAMS_PURPLE
 
+
 class Sole:
     ''' Class to create a shoeprint object containing metadata (e.g., make, 
     model, size), a dataframe of x,y coordinates, and a dataframe of aligned x,y
     coordinates should the shoe be a "Q" shoe aligned to a "K" shoe.
     '''
 
-    def __init__(self, 
-                 image_path: str = None, 
-                 border_width: int = 0, 
-                 is_image: bool = True, 
+    def __init__(self,
+                 image_path: str = None,
+                 border_width: int = 0,
+                 is_image: bool = True,
                  coords: pd.DataFrame = None) -> None:
         # accessing metadata from csv in util.py
         # row = METADATA[METADATA['File Name'] == image_path[13:]]
@@ -40,7 +41,7 @@ class Sole:
             self._coords = self._image_to_coords(image_path, border_width)
         else:
             self._coords = coords
-    
+
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
 
@@ -48,17 +49,17 @@ class Sole:
     def file_name(self) -> str:
         '''Getter method for shoeprint file_name'''
         return self._file_name
-    
+
     @file_name.setter
     def file_name(self, value) -> None:
         '''Setter method for file_name'''
         self._file_name = value
-    
+
     # @property
     # def scan_method(self) -> str:
     #     '''Getter method for shoeprint scan method'''
     #     return self._scan_method
-    
+
     # @property
     # def number(self) -> int:
     #     '''Getter method for shoe number'''
@@ -121,7 +122,7 @@ class Sole:
     def coords(self) -> pd.DataFrame:
         '''Getter method for dataframe of original shoeprint coordinates'''
         return self._coords
-    
+
     @coords.setter
     def coords(self, value) -> None:
         '''Setter method for dataframe of coordinates'''
@@ -129,7 +130,6 @@ class Sole:
             self._coords = value
         except Exception as e:
             print("Must be a pandas DataFrame:", str(e))
-
 
     def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
         '''Helper method which takes an image's file address and converts it 
@@ -143,13 +143,13 @@ class Sole:
 
         # edge detection
         img = img.filter(ImageFilter.FIND_EDGES)
-        
+
         # invert colors to light background, dark dots
         inv = PIL.ImageOps.invert(img)
 
         # extract image dimensions and crop image
         image_height, image_width = np.array(inv).shape
-        crop = inv.crop((border_width, border_width, image_width-border_width, 
+        crop = inv.crop((border_width, border_width, image_width-border_width,
                          image_height-border_width))
         crop_arr = np.array(crop)
 
@@ -157,13 +157,13 @@ class Sole:
         crop_arr = crop_arr < BLACK_WHITE_THRESHOLD
         rows, cols = np.where(crop_arr)
         df = pd.DataFrame({"x": rows, "y": cols})
-        
+
         return df
-    
-    def plot(self, color = WILLIAMS_PURPLE, size: float = 0.5):
+
+    def plot(self, color=WILLIAMS_PURPLE, size: float = 0.5):
 
         # Plot scatter plot 1
-        plt.scatter(self.coords.x, self.coords.y, color=color, s = size)
+        plt.scatter(self.coords.x, self.coords.y, color=color, s=size)
 
         # Adjust the plot boundaries
         plt.tight_layout()

@@ -1,12 +1,7 @@
 numpy==1.24.3
-sklearn
+scikit-learn
 pandas==1.5.3
-util
-random
 matplotlib==3.7.1
-time
-collections
-PIL
+Pillow==9.4.0
 scipy==1.10.1
-math
 jupyter
