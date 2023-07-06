@@ -26,18 +26,21 @@ class SolePairCompare:
                  shift_right=False,
                  shift_up=False,
                  shift_down=False,
-                 two_way=False) -> None:
+                 two_way=False,
+                 icp_overlap_threshold=3) -> None:
         '''
         Inputs:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
-        self.Q_coords, self.K_coords, self._rmse = pair.icp_transform(downsample_rate=icp_downsample_rate,
+
+        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
                                                           shift_left=shift_left,
                                                           shift_right=shift_right,
                                                           shift_up=shift_up,
                                                           shift_down=shift_down,
-                                                          two_way=two_way)
+                                                          two_way=two_way,
+                                                          overlap_threshold=icp_overlap_threshold)
 
         self.Q_coords = self.Q_coords.sample(frac=downsample_rate,
                                              random_state=random_seed)
@@ -45,10 +48,6 @@ class SolePairCompare:
         self.K_coords = self.K_coords.sample(frac=downsample_rate,
                                              random_state=random_seed)
         self.pair = pair
-    
-    @property
-    def rmse(self) -> float:
-        return float(self._rmse)
 
     def _df_to_hash(self, df):
         '''

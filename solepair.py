@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sole import Sole
-from icp import icp
+from icp import icp, nearest_neighbor
 from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 
@@ -68,7 +68,8 @@ class SolePair():
                       shift_right=False,
                       shift_up=False,
                       shift_down=False,
-                      two_way=False) -> pd.DataFrame | pd.DataFrame:
+                      two_way=False,
+                      overlap_threshold=3) -> pd.DataFrame | pd.DataFrame:
         '''
         Default: do 1 icp with no initial shift
         The user can specify up to four additional icp trials with differnt initial shifts
@@ -90,22 +91,26 @@ class SolePair():
             shifts.append((0, range))
 
         best_T = None
-        best_rmse = np.Inf
+        best_percent_overlap = -1
         best_shift = None
-        best_apply_to_q = None  # record apply_to_q for the transformation that got the best rmse
+        # record apply_to_q for the transformation that got the best percent overlap
+        best_apply_to_q = None
 
         for shift in shifts:
             # apply shift
             self.Q.coords.loc[:, "x"] += shift[0]
             self.Q.coords.loc[:, "y"] += shift[1]
 
-            T, rmse, apply_to_q = self._icp_helper(max_iterations=max_iterations,
-                                                   tolerance=tolerance,
-                                                   downsample_rate=downsample_rate,
-                                                   random_seed=random_seed,
-                                                   two_way=two_way)
-            if rmse < best_rmse:
-                best_rmse = rmse
+            T, percent_overlap, apply_to_q = self._icp_helper(max_iterations=max_iterations,
+                                                              tolerance=tolerance,
+                                                              downsample_rate=downsample_rate,
+                                                              random_seed=random_seed,
+                                                              two_way=two_way,
+                                                              overlap_threshold=overlap_threshold)
+
+            # Percent overlap: higher the better
+            if percent_overlap > best_percent_overlap:
+                best_percent_overlap = percent_overlap
                 best_T = T
                 best_shift = shift
                 best_apply_to_q = apply_to_q
@@ -126,24 +131,26 @@ class SolePair():
         self.Q.coords.loc[:, "x"] += best_shift[0]
         self.Q.coords.loc[:, "y"] += best_shift[1]
 
-        # more testing below
         transformed_q = pd.DataFrame(
             self._transform(self.Q.coords.to_numpy(), self.T))
+
         self.Q.aligned_coordinates = transformed_q.rename(
             columns={0: 'x', 1: 'y'})
+
         self.aligned = True
 
         # reverse best_shift
         self.Q.coords.loc[:, "x"] -= best_shift[0]
         self.Q.coords.loc[:, "y"] -= best_shift[1]
 
-        return self.Q.aligned_coordinates, self.K.coords, best_rmse
+        return self.Q.aligned_coordinates, self.K.coords
 
     def _icp_helper(self, max_iterations: int = 10000,
                     tolerance: float = 0.00001,
                     downsample_rate: float = 1.0,
                     random_seed: int = 47,
-                    two_way: bool = False):
+                    two_way: bool = False,
+                    overlap_threshold=3):
 
         q_pts, k_pts = self._equalize()
         np.random.seed(random_seed)
@@ -159,22 +166,30 @@ class SolePair():
                                     max_iterations=max_iterations,
                                     tolerance=tolerance)
 
-        # RMSE (Root Mean Squared Error) calc
-        rmse_qk = np.sqrt(np.mean(np.square(distances_qk)))
+        # Calculate percent overlap
+        percent_overlap_qk = np.sum(
+            distances_qk <= overlap_threshold) / num_samples
 
         apply_to_q = True
 
         if two_way:
-            T_kq, distances_kq, _ = icp(k_pts, q_pts,
-                                        max_iterations=max_iterations,
-                                        tolerance=tolerance)
+            T_kq, _, __ = icp(k_pts, q_pts,
+                              max_iterations=max_iterations,
+                              tolerance=tolerance)
 
-            rmse_kq = np.sqrt(np.mean(np.square(distances_kq)))
-            if rmse_kq < rmse_qk:
+            distances_kq_q_as_base, _ = nearest_neighbor(
+                q_pts, self._transform(k_pts, T_kq))
+
+            # Now, we have the distances_kq_q_as_base to calculate percent_overlap_kq
+            percent_overlap_kq = np.sum(
+                distances_kq_q_as_base <= overlap_threshold) / num_samples
+
+            # percent_overlap -- higher the better.
+            if percent_overlap_kq < percent_overlap_qk:
                 apply_to_q = False
-                return T_kq, rmse_kq, apply_to_q
+                return T_kq, percent_overlap_kq, apply_to_q
 
-        return T_qk, rmse_qk, apply_to_q
+        return T_qk, percent_overlap_qk, apply_to_q
 
     def plot(self,
              size: float = 0.1,
