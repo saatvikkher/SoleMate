@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sole import Sole
-from icp import icp, nearest_neighbor
+from icp import icp
 from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 
@@ -42,7 +42,7 @@ class SolePair():
     def T(self, value: np.ndarray) -> None:
         self._T = value
 
-    def _equalize(self) -> np.ndarray | np.ndarray:
+    def _equalize(self):
         q_pts = np.array(self.Q.coords)
         k_pts = np.array(self.K.coords)
 
@@ -54,6 +54,9 @@ class SolePair():
             return q_pts, k_pts
 
     def _transform(self, q_pts: np.ndarray, T: np.ndarray) -> np.ndarray:
+        '''
+        TODO: Documentation
+        '''
         q_hom = np.hstack((q_pts, np.ones((q_pts.shape[0], 1))))
         t_q_hom = np.dot(q_hom, T.T)
         transformed_q = t_q_hom[:, :2] / t_q_hom[:, 2][:, np.newaxis]
@@ -69,7 +72,7 @@ class SolePair():
                       shift_up=False,
                       shift_down=False,
                       two_way=False,
-                      overlap_threshold=3) -> pd.DataFrame | pd.DataFrame:
+                      overlap_threshold=3):
         '''
         Default: do 1 icp with no initial shift
         The user can specify up to four additional icp trials with differnt initial shifts
@@ -127,6 +130,8 @@ class SolePair():
 
         self.T = best_T
 
+        #print("self.T: ", self.T)
+
         # Apply the best_shift
         self.Q.coords.loc[:, "x"] += best_shift[0]
         self.Q.coords.loc[:, "y"] += best_shift[1]
@@ -153,6 +158,8 @@ class SolePair():
                     overlap_threshold=3):
 
         q_pts, k_pts = self._equalize()
+
+        # Downsample q_pts and k_pts
         np.random.seed(random_seed)
         num_samples = int(q_pts.shape[0] * downsample_rate)
         sample_indices_q = np.random.choice(
