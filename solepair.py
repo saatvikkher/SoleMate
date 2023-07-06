@@ -190,7 +190,7 @@ class SolePair():
                 distances_kq_q_as_base <= overlap_threshold) / num_samples
 
             # percent_overlap -- higher the better.
-            if percent_overlap_kq < percent_overlap_qk:
+            if percent_overlap_kq > percent_overlap_qk:
                 apply_to_q = False
                 return T_kq, percent_overlap_kq, apply_to_q
 

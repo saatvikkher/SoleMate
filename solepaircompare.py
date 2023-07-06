@@ -82,11 +82,16 @@ class SolePairCompare:
 
         Returns: (bool)
         '''
+        def get_dist(point_a, point_b):
+            x1, y1 = point_a[0], point_a[1]
+            x2, y2 = point_b[0], point_b[1]
+            return math.hypot(x1-x2, y1-y2)
+
         for potential_x in range(x-threshold, x+threshold+1):
             for potential_y in range(y-threshold, y+threshold+1):
                 if potential_x in ht and potential_y in ht[potential_x]:
                     # also check whether that matched point is in circle of radius = threshold
-                    if math.dist([x, y], [potential_x, potential_y]) <= threshold:
+                    if get_dist([x, y], [potential_x, potential_y]) <= threshold:
                         return True
         return False
 
@@ -187,7 +192,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       metric='euclidean')
+                                                       affinity='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
