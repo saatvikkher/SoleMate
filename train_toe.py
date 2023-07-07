@@ -5,9 +5,9 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('../train_full.log', 'w')
+sys.stdout = open('../train_toe.log', 'w')
 
-print("[TRAIN FULL] Started.")
+print("[TRAIN TOE] Started.")
 
 # Read in training split
 km_train = pd.read_csv("KM_train.csv")
@@ -25,16 +25,16 @@ df = pd.DataFrame()
 for i in range(3):
     start = time.time()
     if i % 20 == 0:
-        print("[TRAIN FULL] Progress: ", (i*100) / len(combined_train))
+        print("[TRAIN TOE] Progress: ", (i*100) / len(combined_train))
     try:
         row = pd.DataFrame(process_image(
-            Q_files[i], K_files[i], mated[i]), index=[0])
-        df = pd.concat([df, row], ignore_index=True)
-        df.to_csv("result_train_full_0707.csv", index=False)
+            Q_files[i], K_files[i], mated[i], partial_type="toe"), index=[0])
+        df = pd.concat([df, row], ignore_index=True)    
+        df.to_csv("result_train_toe_0707.csv", index=False)
     except Exception as e:
-        print("[TRAIN FULL] Caught error at index " + str(i) + str(e))
+        print("[TRAIN TOE] Caught error at index " + str(i) + str(e))
     end = time.time()
-    print("[TRAIN FULL]: Time for iteration ", str(i), ": ", str(end - start))
+    print("[TRAIN TOE]: Time for iteration ", str(i), ": ", str(end - start))
     gc.collect()
 
-print("[TRAIN FULL] Complete!")
+print("[TRAIN TOE] Complete!")
