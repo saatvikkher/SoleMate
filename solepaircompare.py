@@ -6,9 +6,7 @@ from scipy.stats import kurtosis
 import math
 # import time
 from solepair import SolePair
-from sole import Sole
 from sklearn.cluster import AgglomerativeClustering, KMeans
-from sklearn.preprocessing import StandardScaler
 
 
 class SolePairCompare:
@@ -36,7 +34,7 @@ class SolePairCompare:
             K: (Pandas DataFrame) for shoe K
         '''
 
-        self.Q_coords, self.K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
+        self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
                                                           shift_left=shift_left,
                                                           shift_right=shift_right,
                                                           shift_up=shift_up,
@@ -44,14 +42,36 @@ class SolePairCompare:
                                                           two_way=two_way,
                                                           overlap_threshold=icp_overlap_threshold)
 
-        self.Q_coords = self.Q_coords.sample(frac=downsample_rate,
+        self._Q_coords = self._Q_coords.sample(frac=downsample_rate,
                                              random_state=random_seed)
 
-        self.K_coords = self.K_coords.sample(frac=downsample_rate,
+        self._K_coords = self._K_coords.sample(frac=downsample_rate,
                                              random_state=random_seed)
+
+        # The percent of original K that is keeping
+        self.K_keep_percent = 1.0
+
         self.pair = pair
 
         self.random_seed = random_seed
+    
+    @property
+    def Q_coords(self) -> pd.DataFrame:
+        return self._Q_coords
+
+    @property
+    def K_coords(self) -> pd.DataFrame:
+        return self._K_coords
+    
+    @Q_coords.setter
+    def Q_coords(self, value) -> None:
+        '''Setter method for Q dataframe of coordinates'''
+        self._Q_coords = value
+    
+    @K_coords.setter
+    def K_coords(self, value) -> None:
+        '''Setter method for K dataframe of coordinates'''
+        self._K_coords = value
 
     def _df_to_hash(self, df):
         '''
@@ -298,14 +318,22 @@ class SolePairCompare:
         wcv_metric = (wcv_Q - wcv_K) / wcv_Q
         return wcv_metric
 
-    def cluster_metrics(self, n_clusters: int = 20, downsample_rate: float = 0.2):
-        Q_coords_ds = self.Q_coords.sample(frac=downsample_rate,random_state=47)
-        K_coords_ds = self.K_coords.sample(frac=downsample_rate,random_state=47)
+    def cluster_metrics(self, n_clusters: int = 20, downsample_rate=0.2):
+        Q_coords_ds = self.Q_coords.sample(
+            frac=downsample_rate, random_state=self.random_seed)
+        K_coords_ds = self.K_coords.sample(
+            frac=downsample_rate, random_state=self.random_seed)
+
+        # Change n_clusters according to how many points are
+        # in k_coords_cut relative to k_coords, if the cut has been made.
+        n_clusters = round(self.K_keep_percent * n_clusters)
+
         hcluster_centroids = self._hierarchical_cluster(
             Q_coords_ds, n_clusters=n_clusters)
         q_kmeans_centroids, q_df_labels, q_kmeans = self._kmeans_cluster(df=Q_coords_ds,
                                                                          init=hcluster_centroids,
                                                                          n_clusters=n_clusters)
+
         k_kmeans_centroids, k_df_labels, k_kmeans = self._kmeans_cluster(df=K_coords_ds,
                                                                          init=q_kmeans_centroids,
                                                                          n_clusters=n_clusters)
@@ -321,3 +349,38 @@ class SolePairCompare:
             q_df_labels, k_df_labels, q_kmeans_centroids, k_kmeans_centroids, n_clusters)
 
         return metrics_dict
+
+    def cut_k(self, partial_type, side):
+        '''
+        Suppose Q is a partial print
+        '''
+
+        assert side in ['R', 'L']
+        assert partial_type in ['toe', 'heel', 'inside', 'outside', 'full']
+
+        max_x = max(self.Q_coords.x)
+        min_x = min(self.Q_coords.x)
+        max_y = max(self.Q_coords.y)
+        min_y = min(self.Q_coords.y)
+
+        K_keep = None
+
+        if partial_type == "toe":
+            K_keep = self.K_coords[self.K_coords.x < max_x]
+        elif partial_type == "heel":
+            K_keep = self.K_coords[self.K_coords.x > min_x]
+        elif partial_type == "inside":
+            if side == "R":
+                K_keep = self.K_coords[self.K_coords.y < max_y]
+            else:
+                K_keep = self.K_coords[self.K_coords.y > min_y]
+        elif partial_type == "outside":
+            if side == "R":
+                K_keep = self.K_coords[self.K_coords.y > min_y]
+            else:
+                K_keep = self.K_coords[self.K_coords.y < max_y]
+        else: # when partial_type == "full"
+            K_keep = self.K_coords
+
+        self.K_coords = K_keep
+        self.K_keep_percent = len(K_keep) / len(self.K_coords)

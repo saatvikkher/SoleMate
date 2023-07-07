@@ -53,15 +53,15 @@ class SolePair():
         else:
             return q_pts, k_pts
 
-    def _transform(self, q_pts: np.ndarray, T: np.ndarray) -> np.ndarray:
+    def _transform(self, k_pts: np.ndarray, T: np.ndarray) -> np.ndarray:
         '''
         TODO: Documentation
         '''
-        q_hom = np.hstack((q_pts, np.ones((q_pts.shape[0], 1))))
-        t_q_hom = np.dot(q_hom, T.T)
-        transformed_q = t_q_hom[:, :2] / t_q_hom[:, 2][:, np.newaxis]
+        k_hom = np.hstack((k_pts, np.ones((k_pts.shape[0], 1))))
+        t_k_hom = np.dot(k_hom, T.T)
+        transformed_k = t_k_hom[:, :2] / t_k_hom[:, 2][:, np.newaxis]
 
-        return transformed_q
+        return transformed_k
 
     def icp_transform(self, max_iterations: int = 10000,
                       tolerance: float = 0.00001,
@@ -81,8 +81,8 @@ class SolePair():
         # Default: no shift
         shifts = [(0, 0)]
 
-        range = 2 * max((self.Q.coords.x.max() - self.Q.coords.x.min()),
-                        (self.Q.coords.y.max() - self.Q.coords.y.min()))
+        range = 2 * max((self.K.coords.x.max() - self.K.coords.x.min()),
+                        (self.K.coords.y.max() - self.K.coords.y.min()))
 
         if shift_left:
             shifts.append((-range, 0))
@@ -96,15 +96,15 @@ class SolePair():
         best_T = None
         best_percent_overlap = -1
         best_shift = None
-        # record apply_to_q for the transformation that got the best percent overlap
-        best_apply_to_q = None
+        # record apply_to_k for the transformation that got the best percent overlap
+        best_apply_to_k = None
 
         for shift in shifts:
             # apply shift
-            self.Q.coords.loc[:, "x"] += shift[0]
-            self.Q.coords.loc[:, "y"] += shift[1]
+            self.K.coords.loc[:, "x"] += shift[0]
+            self.K.coords.loc[:, "y"] += shift[1]
 
-            T, percent_overlap, apply_to_q = self._icp_helper(max_iterations=max_iterations,
+            T, percent_overlap, apply_to_k = self._icp_helper(max_iterations=max_iterations,
                                                               tolerance=tolerance,
                                                               downsample_rate=downsample_rate,
                                                               random_seed=random_seed,
@@ -116,37 +116,37 @@ class SolePair():
                 best_percent_overlap = percent_overlap
                 best_T = T
                 best_shift = shift
-                best_apply_to_q = apply_to_q
+                best_apply_to_k = apply_to_k
 
             # reverse shift
-            self.Q.coords.loc[:, "x"] -= shift[0]
-            self.Q.coords.loc[:, "y"] -= shift[1]
+            self.K.coords.loc[:, "x"] -= shift[0]
+            self.K.coords.loc[:, "y"] -= shift[1]
 
-        # If we are not applying the transformation matrix to Q,
-        # we get the reversed T first and apply it to Q later.
+        # If we are not applying the transformation matrix to K,
+        # we get the reversed T first and apply it to K later.
         # Note: the reverse of a homogenous transformation is its inverse
-        if not best_apply_to_q:
+        if not best_apply_to_k:
             best_T = np.linalg.inv(best_T)
 
         self.T = best_T
 
         # Apply the best_shift
-        self.Q.coords.loc[:, "x"] += best_shift[0]
-        self.Q.coords.loc[:, "y"] += best_shift[1]
+        self.K.coords.loc[:, "x"] += best_shift[0]
+        self.K.coords.loc[:, "y"] += best_shift[1]
 
-        transformed_q = pd.DataFrame(
-            self._transform(self.Q.coords.to_numpy(), self.T))
+        transformed_k = pd.DataFrame(
+            self._transform(self.K.coords.to_numpy(), self.T))
 
-        self.Q.aligned_coordinates = transformed_q.rename(
+        self.K.aligned_coordinates = transformed_k.rename(
             columns={0: 'x', 1: 'y'})
 
         self.aligned = True
 
         # reverse best_shift
-        self.Q.coords.loc[:, "x"] -= best_shift[0]
-        self.Q.coords.loc[:, "y"] -= best_shift[1]
+        self.K.coords.loc[:, "x"] -= best_shift[0]
+        self.K.coords.loc[:, "y"] -= best_shift[1]
 
-        return self.Q.aligned_coordinates, self.K.coords
+        return self.Q.coords, self.K.aligned_coordinates
 
     def _icp_helper(self, max_iterations: int = 10000,
                     tolerance: float = 0.00001,
@@ -159,7 +159,7 @@ class SolePair():
 
         # Downsample q_pts and k_pts
         np.random.seed(random_seed)
-        num_samples = int(q_pts.shape[0] * downsample_rate)
+        num_samples = int(k_pts.shape[0] * downsample_rate)
         sample_indices_q = np.random.choice(
             q_pts.shape[0], num_samples, replace=False)
         sample_indices_k = np.random.choice(
@@ -167,34 +167,35 @@ class SolePair():
         q_pts = q_pts[sample_indices_q]
         k_pts = k_pts[sample_indices_k]
 
-        T_qk, distances_qk, _ = icp(q_pts, k_pts,
+        T_kq, distances_kq, _ = icp(k_pts, q_pts,
                                     max_iterations=max_iterations,
                                     tolerance=tolerance)
 
         # Calculate percent overlap
-        percent_overlap_qk = np.sum(
-            distances_qk <= overlap_threshold) / num_samples
+        percent_overlap_kq = np.sum(
+            distances_kq <= overlap_threshold) / num_samples
 
-        apply_to_q = True
+        apply_to_k = True
 
         if two_way:
-            T_kq, _, __ = icp(k_pts, q_pts,
+            T_qk, _, __ = icp(q_pts, k_pts,
                               max_iterations=max_iterations,
                               tolerance=tolerance)
 
-            distances_kq_q_as_base, _ = nearest_neighbor(
-                q_pts, self._transform(k_pts, T_kq))
+            # to keep the metric of comparing two icps consistent
+            distances_qk_k_as_base, _ = nearest_neighbor(
+                k_pts, self._transform(q_pts, T_qk))
 
-            # Now, we have the distances_kq_q_as_base to calculate percent_overlap_kq
-            percent_overlap_kq = np.sum(
-                distances_kq_q_as_base <= overlap_threshold) / num_samples
+            # Now, we have the distances_qk_k_as_base to calculate percent_overlap_qk
+            percent_overlap_qk = np.sum(
+                distances_qk_k_as_base <= overlap_threshold) / num_samples
 
             # percent_overlap -- higher the better.
-            if percent_overlap_kq > percent_overlap_qk:
-                apply_to_q = False
-                return T_kq, percent_overlap_kq, apply_to_q
+            if percent_overlap_qk > percent_overlap_kq:
+                apply_to_k = False
+                return T_qk, percent_overlap_qk, apply_to_k
 
-        return T_qk, percent_overlap_qk, apply_to_q
+        return T_kq, percent_overlap_kq, apply_to_k
 
     def plot(self,
              size: float = 0.1,
@@ -206,15 +207,15 @@ class SolePair():
             aligned: (bool) indicating if you want to access the aligned image
         '''
 
-        plt.scatter(self.K.coords.x, self.K.coords.y,
-                    s=size, label="K", color=color_k)
-
         if aligned:
-            plt.scatter(self.Q.aligned_coordinates.x, self.Q.aligned_coordinates.y,
-                        s=size, label="Aligned Q", color=color_q)
+            plt.scatter(self.K.aligned_coordinates.x, self.K.aligned_coordinates.y,
+                        s=size, label="Aligned K", color=color_k)
         else:
-            plt.scatter(self.Q.coords.x, self.Q.coords.y,
-                        s=size, label="Q", color=color_q)
+            plt.scatter(self.K.coords.x, self.K.coords.y,
+                        s=size, label="K", color=color_k)
+
+        plt.scatter(self.Q.coords.x, self.Q.coords.y,
+                    s=size, label="Q", color=color_q)
 
         plt.legend()
 
