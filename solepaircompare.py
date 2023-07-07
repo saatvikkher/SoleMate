@@ -51,6 +51,8 @@ class SolePairCompare:
                                              random_state=random_seed)
         self.pair = pair
 
+        self.random_seed = random_seed
+
     def _df_to_hash(self, df):
         '''
         Changes a dataframe to a hashtable.
@@ -296,13 +298,15 @@ class SolePairCompare:
         wcv_metric = (wcv_Q - wcv_K) / wcv_Q
         return wcv_metric
 
-    def cluster_metrics(self, n_clusters: int = 20):
+    def cluster_metrics(self, n_clusters: int = 20, downsample_rate: float = 0.2):
+        Q_coords_ds = self.Q_coords.sample(frac=downsample_rate,random_state=47)
+        K_coords_ds = self.K_coords.sample(frac=downsample_rate,random_state=47)
         hcluster_centroids = self._hierarchical_cluster(
-            self.Q_coords, n_clusters=n_clusters)
-        q_kmeans_centroids, q_df_labels, q_kmeans = self._kmeans_cluster(df=self.Q_coords,
+            Q_coords_ds, n_clusters=n_clusters)
+        q_kmeans_centroids, q_df_labels, q_kmeans = self._kmeans_cluster(df=Q_coords_ds,
                                                                          init=hcluster_centroids,
                                                                          n_clusters=n_clusters)
-        k_kmeans_centroids, k_df_labels, k_kmeans = self._kmeans_cluster(df=self.K_coords,
+        k_kmeans_centroids, k_df_labels, k_kmeans = self._kmeans_cluster(df=K_coords_ds,
                                                                          init=q_kmeans_centroids,
                                                                          n_clusters=n_clusters)
 
