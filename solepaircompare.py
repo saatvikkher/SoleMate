@@ -4,7 +4,6 @@ from collections import defaultdict
 from scipy.spatial import KDTree
 from scipy.stats import kurtosis
 import math
-# import time
 from solepair import SolePair
 from sklearn.cluster import AgglomerativeClustering, KMeans
 
