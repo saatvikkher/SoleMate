@@ -13,7 +13,7 @@ print("[TRAIN TOE] Started.")
 km_train = pd.read_csv("KM_train.csv")
 knm_train = pd.read_csv("KNM_train.csv")
 
-combined_train = pd.concat([km_train, knm_train], ignore_index=True)[:3]
+combined_train = pd.concat([km_train, knm_train], ignore_index=True)
 
 # Grab the file names and mated status of Q and K
 Q_files = combined_train.q.values
