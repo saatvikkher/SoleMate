@@ -5,7 +5,7 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('../train_toe.log', 'w')
+sys.stdout = open('./train_toe.log', 'w')
 
 print("[TRAIN TOE] Started.")
 
@@ -22,7 +22,7 @@ mated = combined_train.mated.values  # Value of 'mated' parameter
 
 df = pd.DataFrame()
 
-for i in range(3):
+for i in range(len(combined_train)):
     start = time.time()
     if i % 20 == 0:
         print("[TRAIN TOE] Progress: ", (i*100) / len(combined_train))
