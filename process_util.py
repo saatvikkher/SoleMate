@@ -25,8 +25,11 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
     k_size = k_row['Shoe Size'].iloc[0]
     k_foot = K_file[6:7]
 
-    middle_x = min(Q.coords.x) + ((max(Q.coords.x) - min(Q.coords.x)) / 2)
-    middle_y = min(Q.coords.y) + ((max(Q.coords.y) - min(Q.coords.y)) / 2)
+    x_series = Q.coords.x
+    y_series = Q.coords.y
+
+    middle_x = x_series.quantile(0.025) + ((x_series.quantile(0.975) - x_series.quantile(0.025)) / 2)
+    middle_y = y_series.quantile(0.025) + ((y_series.quantile(0.975) - y_series.quantile(0.025)) / 2)
 
     if partial_type == "full":
         sc = SolePairCompare(pair, icp_downsample_rate=0.2, two_way=True, shift_left=True,
