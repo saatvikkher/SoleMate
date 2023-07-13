@@ -276,7 +276,15 @@ class SolePairCompare:
         return rmse
 
     def _cluster_prop_metric(self, df_a: pd.DataFrame, df_b: pd.DataFrame, n_clusters: int) -> float:
+        '''
+        TODO: 
 
+        S I M O N
+        I I D O C
+        M D M ? ?
+        O O ? O !
+        N C ? ! N
+        '''
         cluster_prop_diff = []
         len_a = df_a.shape[0]
         len_b = df_b.shape[0]
@@ -337,6 +345,7 @@ class SolePairCompare:
                                                                          init=q_kmeans_centroids,
                                                                          n_clusters=n_clusters)
 
+        # Prepare for the dict to return
         metrics_dict = {}
         metrics_dict['centroid_distance_n_clusters_'+str(n_clusters)] = self._centroid_distance_metric(
             q_kmeans_centroids, k_kmeans_centroids)
