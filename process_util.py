@@ -100,7 +100,19 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
     # Running metrics
     row.update(sc.min_dist())
     row.update(sc.cluster_metrics())
-    row['q_pct'] = sc.percent_overlap(Q_as_base=True)
-    row['k_pct'] = sc.percent_overlap(Q_as_base=False)
+    row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
+    row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
+
+    row['q_pct_threshold_2'] = sc.percent_overlap(Q_as_base=True, threshold=2)
+    row['k_pct_threshold_2'] = sc.percent_overlap(Q_as_base=False, threshold=2)
+
+    row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
+    row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+
+    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+
+    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
 
     return row
