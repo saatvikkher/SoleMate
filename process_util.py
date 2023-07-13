@@ -99,7 +99,13 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
 
     # Running metrics
     row.update(sc.min_dist())
-    row.update(sc.cluster_metrics())
+
+    row.update(sc.cluster_metrics(n_clusters = 10))
+    row.update(sc.cluster_metrics(n_clusters = 20))
+    row.update(sc.cluster_metrics(n_clusters = 50))
+    row.update(sc.cluster_metrics(n_clusters = 70))
+    row.update(sc.cluster_metrics(n_clusters = 100))
+
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
 
