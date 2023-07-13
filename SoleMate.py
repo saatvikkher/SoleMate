@@ -9,8 +9,25 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from util import WILLIAMS_GOLD, WILLIAMS_PURPLE
+import pickle
 
-train = pd.read_csv("result_train_0711.csv")
+
+@st.cache_data
+def load_train():
+    train = pd.read_csv("result_train_0711.csv")
+    return train
+
+
+@st.cache_resource
+def load_full_model():
+    full_model = pickle.load(open('full.pkl', 'rb'))
+    return full_model
+
+
+@st.cache_resource
+def load_partial_model():
+    partial_model = pickle.load(open('full.pkl', 'rb'))
+    return partial_model
 
 
 def plot_pre(Q_down, K_down):
@@ -36,8 +53,9 @@ def plot_post(Q_down, K_al_down):
     post = go.Figure(data=data, layout=layout)
     return post
 
-
 # Streamlit app
+
+
 def main():
     # Sidebar
     with st.sidebar:
@@ -46,15 +64,16 @@ def main():
         K_file = st.file_uploader("Upload shoeprint K", type=["tiff"])
 
         # Select border-width
-        border_width = st.slider("Select border width:", 0, 300, 160)
+        q_border_width = st.slider("Select Q border width:", 0, 300, 160)
+        k_border_width = st.slider("Select K border width:", 0, 300, 160)
 
         # Select partial_type
         partial_options = ["full", "partial"]
         partial_type = st.selectbox("Select Partial Type:", partial_options)
 
-    col1, col2 = st.columns([1,1.5])
+    col1, col2 = st.columns([1, 1.5])
     with col1:
-        c1, c2, c3 = st.columns([1,3,1])
+        _, c2, _ = st.columns([1, 3, 1])
         with c2:
             st.image("logo.png")
     with col2:
@@ -76,8 +95,8 @@ def main():
         st.divider()
         # Check if both images are uploaded
         if Q_file and K_file:
-            Q = Sole(Q_file, border_width=border_width)
-            K = Sole(K_file, border_width=border_width)
+            Q = Sole(Q_file, border_width=q_border_width)
+            K = Sole(K_file, border_width=k_border_width)
             pair = SolePair(Q, K, True)
 
             # ICP
@@ -107,27 +126,31 @@ def main():
             st.header("Metrics")
             st.markdown(
                 "We attempt to quantify similarity using a number of metrics.")
-            
+
             # Overlap
             st.subheader("Overlap")
 
             col1, col2 = st.columns(2)
             with col1:
                 q_pct = plt.figure(figsize=(10, 7))
-                sns.kdeplot(data=train, x="q_pct", hue="mated",
+                sns.kdeplot(data=load_train(), x="q_pct", hue="mated",
                             fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                             )
-                plt.axvline(x=new_q_pct, color='#BD783A', linestyle='--', linewidth=3)
-                plt.text(new_q_pct, -0.25, 'Test Pair',verticalalignment='bottom', horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                plt.axvline(x=new_q_pct, color='#BD783A',
+                            linestyle='--', linewidth=3)
+                plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
+                         horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
                 plt.title("Q Percent-Overlap")
                 st.pyplot(q_pct)
             with col2:
                 k_pct = plt.figure(figsize=(10, 7))
-                sns.kdeplot(data=train, x="k_pct", hue="mated",
+                sns.kdeplot(data=load_train(), x="k_pct", hue="mated",
                             fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                             )
-                plt.axvline(x=new_k_pct, color='#BD783A', linestyle='--', linewidth=3)
-                plt.text(new_k_pct, -0.25, 'Test Pair',verticalalignment='bottom', horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                plt.axvline(x=new_k_pct, color='#BD783A',
+                            linestyle='--', linewidth=3)
+                plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
+                         horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
                 plt.title("K Percent-Overlap")
                 st.pyplot(k_pct)
 
@@ -137,9 +160,13 @@ def main():
             # Clustering
             st.subheader("Clustering")
 
-    st.divider()
+
     st.markdown(
-        "*Developed and Maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, Ashley Zheng*")
+        "*Disclaimer: This tool should be used for research purposes only.*")
+    st.markdown(
+        "Developed and Maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, Ashley Zheng")
+    st.markdown(
+        "Please [reach out to us](saatvikkher1@gmail.com) if you run into any issues or have any comments or questions.")
 
 
 # Run the app
