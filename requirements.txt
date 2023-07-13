@@ -6,3 +6,4 @@ Pillow==9.4.0
 scipy==1.10.1
 jupyter
 plotly==5.6.0
+seaborn
