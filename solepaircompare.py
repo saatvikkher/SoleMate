@@ -338,13 +338,12 @@ class SolePairCompare:
                                                                          n_clusters=n_clusters)
 
         metrics_dict = {}
-        metrics_dict['centroid_distance'] = self._centroid_distance_metric(
+        metrics_dict['centroid_distance_n_clusters_'+str(n_clusters)] = self._centroid_distance_metric(
             q_kmeans_centroids, k_kmeans_centroids)
-        metrics_dict['cluster_proprtion'] = self._cluster_prop_metric(
+        metrics_dict['cluster_proprtion_n_clusters_'+str(n_clusters)] = self._cluster_prop_metric(
             q_df_labels, k_df_labels, n_clusters)
-        metrics_dict['iterations_q'] = q_kmeans.n_iter_
-        metrics_dict['iterations_k'] = k_kmeans.n_iter_
-        metrics_dict['wcv'] = self._within_cluster_var_metric(
+        metrics_dict['iterations_k_n_clusters_'+str(n_clusters)] = k_kmeans.n_iter_
+        metrics_dict['wcv_ratio_n_clusters_'+str(n_clusters)] = self._within_cluster_var_metric(
             q_df_labels, k_df_labels, q_kmeans_centroids, k_kmeans_centroids, n_clusters)
 
         return metrics_dict
