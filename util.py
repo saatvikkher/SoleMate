@@ -47,6 +47,7 @@ def _create_knm_pairs(df, name: str, size: int = 2407):
                df.iloc[i].loc['Shoe Size'] != df.iloc[non_mated_row].loc['Shoe Size'] or
                df.iloc[i].loc['Shoe Make/Model'] != df.iloc[non_mated_row].loc['Shoe Make/Model'] or
                df.iloc[i].loc['Foot'] != df.iloc[non_mated_row].loc['Foot']):
+            
             non_mated_row = np.random.randint(len(df))
 
         knms.append((df.iloc[i].loc['File Name'],
@@ -107,6 +108,9 @@ def _create_knm_pairs_for_baseline(df, name: str, size: int = 5000):
         print(i)
         non_mated_row = np.random.randint(len(df))
 
+        counter = 0
+        found = True
+
         # We keep iterating until we find something that satisfy the KNM condition
         while (df.iloc[i].loc['File Name'] == df.iloc[non_mated_row].loc['File Name'] or
                str(df.iloc[non_mated_row].loc['Visit Number']) != "1" or
@@ -115,9 +119,15 @@ def _create_knm_pairs_for_baseline(df, name: str, size: int = 5000):
                df.iloc[i].loc['Shoe Make/Model'] != df.iloc[non_mated_row].loc['Shoe Make/Model'] or
                df.iloc[i].loc['Foot'] != df.iloc[non_mated_row].loc['Foot']):
             non_mated_row = np.random.randint(len(df))
+            counter += 1
 
-        knms.append((df.iloc[i].loc['File Name'],
-                    df.iloc[non_mated_row].loc['File Name']))
+            if counter > 100:
+                found = False
+                break
+
+        if found:
+            knms.append((df.iloc[i].loc['File Name'],
+                        df.iloc[non_mated_row].loc['File Name']))
 
     knms_df = pd.DataFrame(knms).sample(size)
     knms_df = knms_df.reset_index(drop=True)
