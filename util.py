@@ -63,20 +63,22 @@ def _create_km_pairs_for_baseline(df, name: str):
         - df: (Pandas DataFrame) The metadata dataframe
         - name: (str) The name of the file you want to output to
 
-    For Baseline: same shoe number, same foot, same size, both visit number 
-                  has to be 1, and same image number.
+    For Baseline: Same shoe number, same foot, same size, both visit number 
+                  has to be 1. 
+                  We don't require image number to be the same.
     '''
 
     kms = []
 
     df = df.sort_values(by='Shoe Number')
+
     for i in range(len(df)):
+        print(i)
         for j in range(i+1, len(df)):
             if (df.iloc[i].loc['Shoe Number'] == df.iloc[j].loc['Shoe Number'] and
                     str(df.iloc[i].loc['Visit Number']) == "1" and
                     str(df.iloc[j].loc['Visit Number']) == "1" and
                     df.iloc[i].loc['Foot'] == df.iloc[j].loc['Foot'] and
-                    df.iloc[i].loc['Image Number'] == df.iloc[j].loc['Image Number'] and
                     df.iloc[i].loc['Shoe Size'] == df.iloc[j].loc['Shoe Size']
                 ):
                 kms.append((df.iloc[i].loc['File Name'],
@@ -120,3 +122,5 @@ def _create_knm_pairs_for_baseline(df, name: str, size: int = 5000):
     knms_df = knms_df.reset_index(drop=True)
     knms_df.rename(columns={0: 'q', 1: 'k'}, inplace=True)
     knms_df.to_csv(name, index=False)
+
+
