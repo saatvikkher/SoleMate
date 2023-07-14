@@ -25,7 +25,7 @@ df = pd.DataFrame()
 for i in range(len(combined_train)):
     start = time.time()
     if i % 20 == 0:
-        print("[BASELINE TRAIN] Progress: ", (i*100) / len(combined_train))
+        print("[BASELINE TRAIN 400 - 800] Progress: ", (i*100) / len(combined_train))
     try:
         row = pd.DataFrame(process_image(
             Q_files[i], K_files[i], mated[i]), index=[0])

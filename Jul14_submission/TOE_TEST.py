@@ -25,7 +25,7 @@ df = pd.DataFrame()
 for i in range(len(combined_test)):
     start = time.time()
     if i % 20 == 0:
-        print("[TOE TRAIN] Progress: ", (i*100) / len(combined_test))
+        print("[TOE TEST] Progress: ", (i*100) / len(combined_test))
     try:
         row = pd.DataFrame(process_image(
             Q_files[i], K_files[i], mated[i], partial_type="toe"), index=[0])
