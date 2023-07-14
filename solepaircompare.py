@@ -213,7 +213,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       metric='euclidean')
+                                                       affinity='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
