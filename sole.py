@@ -179,7 +179,8 @@ class Sole:
             color (str)
             size (float): size of plot points s=size in plt.scatter()
 
-        No returns
+        Returns:
+            None
         '''
 
         # Plot scatter plot 1
@@ -192,7 +193,13 @@ class Sole:
 
     def flip_coords(self):
         '''
-        flip the coords for OOD dataset
+        Flips the coordinates of a shoe along the x-axis.
+
+        Inputs:
+            None
+
+        Returns:
+            None
         '''
         temp_coords = self._coords.copy(deep=True)
         max_y = max(self._coord['y'])
