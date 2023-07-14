@@ -55,7 +55,19 @@ class SolePair():
 
     def _transform(self, k_pts: np.ndarray, T: np.ndarray) -> np.ndarray:
         '''
-        TODO: Documentation
+        Given coordinates and a transformation array found in ICP, _transform is
+        a helper function to icp_transform that moves the she coordinates by the
+        translation of T.
+
+        Inputs:
+            k_pts (np.ndarray): the points of shoe K, untransformed, shape nx2
+            T (np.ndarray): a 3x3 array used for transformation:
+                            cos(t) -sin(t)  x-translation
+                            sin(t)  cos(t)  y-translation
+                            0       0       1
+
+        Returns:
+            (np.ndarray): the transformed shoe k, shape nx2
         '''
         k_hom = np.hstack((k_pts, np.ones((k_pts.shape[0], 1))))
         t_k_hom = np.dot(k_hom, T.T)
@@ -74,10 +86,34 @@ class SolePair():
                       two_way=False,
                       overlap_threshold=3):
         '''
-        Default: do 1 icp with no initial shift
-        The user can specify up to four additional icp trials with differnt initial shifts
-        '''
+        icp_transform performs the alignment of the shoe pair. This uses the
+        iterative closest point algorithm. 
 
+        The default is to do iterative closest point with no intial shift. To 
+        make the algorithm more effective, the user can sepcify up to four 
+        additional icp trials with different initial shifts. Two-way icp tries 
+        aligning Q on K and K on Q and chooses the best alignment based on the
+        overlap_threshold. This implementation of ICP always shifts shoe K.
+
+        icp converges once the rotation matrix gets closet to 0.
+
+        Inputs:
+            max_iterations (int): the maximum number of iterations for icp to 
+                converge
+            tolerance (float): the tolerance for the rotation matrix
+            downsample_rate (float)
+            random_seed (int)
+            shift_left (bool): try an intial start where the moving shoe starts
+                to the left of the base shoe.
+            shift_right (bool)
+            shift_up (bool)
+            shift_down (bool)
+            two_way (bool)
+            overlap_threshold (int): tolerance to decide best ICP in two-way
+
+        Returns:
+            Q coords (pd.DataFrame), new K coords (pd.DataFrame)
+        '''
         # Default: no shift
         shifts = [(0, 0)]
 
@@ -154,7 +190,9 @@ class SolePair():
                     random_seed: int = 47,
                     two_way: bool = False,
                     overlap_threshold=3):
-
+        '''
+        A helper function to ICP.
+        '''
         q_pts, k_pts = self._equalize()
 
         # Downsample q_pts and k_pts
