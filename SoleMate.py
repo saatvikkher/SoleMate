@@ -19,15 +19,9 @@ def load_train():
 
 
 @st.cache_resource
-def load_full_model():
+def load_model():
     full_model = pickle.load(open('full.pkl', 'rb'))
     return full_model
-
-
-@st.cache_resource
-def load_partial_model():
-    partial_model = pickle.load(open('full.pkl', 'rb'))
-    return partial_model
 
 
 def plot_pre(Q_down, K_down):
@@ -64,12 +58,8 @@ def main():
         K_file = st.file_uploader("Upload shoeprint K", type=["tiff"])
 
         # Select border-width
-        q_border_width = st.slider("Select Q border width:", 0, 300, 160)
-        k_border_width = st.slider("Select K border width:", 0, 300, 160)
-
-        # Select partial_type
-        partial_options = ["full", "partial"]
-        partial_type = st.selectbox("Select partial type:", partial_options)
+        q_border_width = st.number_input("Select Q border width:", 0, 300, 160)
+        k_border_width = st.number_input("Select K border width:", 0, 300, 160)
 
     col1, col2 = st.columns([1, 1.5])
     with col1:
@@ -88,16 +78,15 @@ def main():
     st.markdown("*SoleMate* is a tool for determining whether or not footwear outsole impressions match. Our algorithm offers a fast\
                 and robust method to match the *K* shoe (the known shoe of a suspect)\
                 to a *Q* shoe (the questioned shoeprint found at the crime scene). We use Iterative\
-                Closest Point (ICP), a point cloud registration algorithm to find the best affine transformation\
-                to align two shoeprints. We then calculate metrics from which we classify the pair as a mate or\
-                non-mate based on the results of a random forest model.")
+                Closest Point (ICP), a point cloud registration algorithm, to find the best affine transformation\
+                to align two shoeprints. We then calculate metrics and compare them to training data.\
+                Using these metrics in a random forest model, we then identify the selected\
+                shoe pair as mated or non-mated.")
     st.markdown("To use this tool, upload two images on the left: a Q shoe and\
-                a K shoe. If the images have a frame or ruler, designate the\
-                width of the border in pixels with the slider. If the Q print\
-                is partial, select partial from the dropdown menu to compare\
-                the metrics to those from the distributions of partial prints.\
-                Finally, click the button to run the algorithm and see the\
-                results!")
+                a K shoe. If the images come with a frame or ruler, designate\
+                the width of the border in pixels with the slider. Finally,\
+                click the \"Run SoleMate\" button to run the algorithm and see\
+                the results!")
 
     if st.sidebar.button("Run SoleMate"):
         st.divider()
@@ -111,7 +100,7 @@ def main():
             st.header("ICP Alignment")
             st.markdown(
                 "We calculate the best rigid body transformation to align the K shoe to the Q shoe.")
-            with st.spinner("Aligning Soles..."):
+            with st.spinner("Aligning soles..."):
                 sc = SolePairCompare(pair, icp_downsample_rate=0.02, two_way=True, shift_left=True,
                                      shift_right=True, shift_down=True, shift_up=True)
             K_down = K.coords.sample(frac=0.1)
@@ -143,132 +132,309 @@ def main():
                             each point in the shifting cloud to the closest\
                             point in the reference cloud. Using these\
                             distances, we compute a rotation and translation to\
-                            minimize the root mean squared of the distances.\
+                            minimize the root mean square of the distances.\
                             The algorithm iteratively computes distances and\
                             applies transformations until it determines that a\
                             local minimum root mean square has been reached, at\
                             which point the point clouds should be aligned.")
 
             st.divider()
-            # Metrics
-            new_q_pct = sc.percent_overlap()
-            new_k_pct = sc.percent_overlap(Q_as_base=False)
 
-            st.header("Metrics")
-            st.markdown(
-                "We attempt to quantify similarity using a number of metrics.")
+            with st.spinner("Calculating metrics..."):
+                # Metrics
+                new_q_pct = sc.percent_overlap()
+                new_k_pct = sc.percent_overlap(Q_as_base=False)
+                dist_metrics = sc.min_dist()
+                all_cluster_metrics = sc.cluster_metrics()
+                # Subsetting only cluster metrics with n_clusters=20
+                cluster_metrics = {}
+                cluster_metrics['centroid_distance'] = all_cluster_metrics['centroid_distance_n_clusters_20']
+                cluster_metrics['cluster_proprtion'] = all_cluster_metrics['cluster_proprtion_n_clusters_20']
+                cluster_metrics['iterations_k'] = all_cluster_metrics['iterations_k_n_clusters_20']
+                cluster_metrics['wcv'] = all_cluster_metrics['wcv_ratio_n_clusters_20']
 
-            # Overlap
-            st.subheader("Overlap")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                q_pct = plt.figure(figsize=(10, 7))
-                sns.kdeplot(data=load_train(), x="q_pct", hue="mated",
-                            fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                            )
-                plt.axvline(x=new_q_pct, color='#BD783A',
-                            linestyle='--', linewidth=3)
-                plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                         horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
-                plt.title("Q Percent-Overlap")
-                st.pyplot(q_pct)
-            with col2:
-                k_pct = plt.figure(figsize=(10, 7))
-                sns.kdeplot(data=load_train(), x="k_pct", hue="mated",
-                            fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                            )
-                plt.axvline(x=new_k_pct, color='#BD783A',
-                            linestyle='--', linewidth=3)
-                plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                         horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
-                plt.title("K Percent-Overlap")
-                st.pyplot(k_pct)
+                st.header("Metrics")
+                st.markdown(
+                    "We quantify similarity using a number of metrics.")
 
-            with st.expander(":bar_chart: About the metric: Overlap"):
-                st.subheader("Percent Overlap")
-                st.markdown("Percent overlap is the proportion of points in one\
-                            shoeprint that are within the circular region of\
-                            radius three coordinates of a point on the other\
-                            print after alignment. We observe the overlap in\
-                            both directions—that is, K on Q and Q on K—and a\
-                            high percent overlap indicates a higher likelihood\
-                            of the shoeprints originating from a mated pair.")
+                # Overlap
+                st.subheader("Overlap")
 
-            # Distance
-            st.subheader("Closest Point Distances")
+                col1, col2 = st.columns(2)
+                with col1:
+                    q_pct = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="q_pct", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=new_q_pct, color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Q Percent-Overlap")
+                    st.pyplot(q_pct)
+                with col2:
+                    k_pct = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="k_pct", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=new_k_pct, color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("K Percent-Overlap")
+                    st.pyplot(k_pct)
 
-            with st.expander(":bar_chart: About the metric: Closest Point Distances"):
+                with st.expander(":bar_chart: About the metric: Overlap"):
+                    st.subheader("Percent Overlap")
+                    st.markdown("Percent overlap is the proportion of points in one\
+                                shoeprint that are within three pixels of the other\
+                                shoeprint after alignment. We observe the overlap\
+                                in both directions— that is, K on Q and Q on K. A\
+                                high percent overlap indicates a higher likelihood\
+                                of the shoeprints originating from a mated pair.")
+
+                # Distance
                 st.subheader("Closest Point Distances")
-                st.markdown("To compute closest point distance metrics, we\
-                            first measure and record the distance between each\
-                            point in the Q shoeprint to the closest point in\
-                            the aligned K shoeprint. Once we have distances\
-                            corresponding to each point in Q, we summarize\
-                            their distribution with the following metrics:\
-                            mean, median, standard deviation, 10th percentile,\
-                            25th percentile, 75th percentile, and 90th\
-                            percentile. For each of these metrics, the smaller\
-                            the magnitude, the more likely the shoeprint pair\
-                            is mated.")
 
-            # Clustering
-            st.subheader("Clustering")
+                col1, col2 = st.columns(2)
+                with col1:
+                    mean = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="mean", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['mean'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Mean CP Distance")
+                    st.pyplot(mean)
+                with col2:
+                    std = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="std", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['std'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Standard Deviation CP Distance")
+                    st.pyplot(std)
 
-            with st.expander(":bar_chart: About the metric: Clustering"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    p10 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="0.1", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.1'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("10th Percentile CP Distance")
+                    st.pyplot(p10)
+                with col2:
+                    p25 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="0.25", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.25'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("25th Percentile CP Distance")
+                    st.pyplot(p25)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    p50 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="0.5", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.5'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Median CP Distance")
+                    st.pyplot(p50)
+                with col2:
+                    p75 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="0.75", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.75'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("75th Percentile CP Distance")
+                    st.pyplot(p75)
+
+                __, col2, __ = st.columns([1, 2, 1])
+                with col2:
+                    p90 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="0.9", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.9'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("90th Percentile CP Distance")
+                    st.pyplot(p90)
+
+                with st.expander(":bar_chart: About the metric: Closest Point Distances"):
+                    st.subheader("Closest Point Distances")
+                    st.markdown("To compute closest point distance metrics, we\
+                                first measure and record the distance between each\
+                                point in the Q shoeprint to the closest point in\
+                                the aligned K shoeprint. Once we have distances\
+                                corresponding to each point in Q, we summarize\
+                                their distribution with the following metrics:\
+                                mean, median, standard deviation, 10th percentile,\
+                                25th percentile, 75th percentile, and 90th\
+                                percentile. For each of these metrics, the smaller\
+                                the magnitude, the more likely the shoeprint pair\
+                                is mated.")
+
+                # Clustering
                 st.subheader("Clustering")
-                st.markdown("Calculating our clustering metrics relies on two\
-                            different clustering algorithms. Hierarchical\
-                            clustering requires a predetermined number of\
-                            clusters, k, and a linkage function. We opt to use\
-                            the Ward linkage function which minimizes the\
-                            variance of the Euclidean distances between points\
-                            within each of the k clusters. k-means clustering,\
-                            on the other hand, is initialized with the\
-                            coordinates of cluster centroids. Using these\
-                            centroid coordinates as a prototype, the k-means\
-                            algorithm minimizes the within-cluster\
-                            sum-of-squares (known as inertia) to find as many\
-                            clusters as centroid coordinates were inputted.")
-                st.markdown("Our implementation of clustering begins with\
-                            hierarchical clustering on the Q shoeprint, and we\
-                            return the centroids of the clusters created. We\
-                            then use these centroids to initialize k-means\
-                            clusters once again on the Q shoeprint. The\
-                            clusters change slightly, so we return the updated\
-                            cluster centroids. We then run k-means clustering\
-                            on the K shoeprint with these centroids. We use the\
-                            similarities between the k-means clusters of Q and\
-                            K to quantify the similarity between the two\
-                            shoeprints. Our measures of similarity are the root\
-                            mean squared of the differences between cluster\
-                            sizes as a proportion of the number of points in\
-                            the entire print, the root mean squared of the\
-                            distances between the centroids of clusters in Q\
-                            and the corresponding updated centroids of the\
-                            clusters in K, the difference between the within\
-                            cluster variation in Q and K scaled by the within\
-                            cluster variation in Q, and the number of\
-                            iterations k-means clustering took to find clusters\
-                            in K.")
-                
+                col1, col2 = st.columns(2)
+                with col1:
+                    centroid_distance = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="centroid_distance", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=cluster_metrics['centroid_distance'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(cluster_metrics['centroid_distance'], -0.001, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Centroid Distance")
+                    st.pyplot(centroid_distance)
+                with col2:
+                    cluster_proprtion = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="cluster_proprtion", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=cluster_metrics['cluster_proprtion'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(cluster_metrics['cluster_proprtion'], -5, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Cluster Proportion")
+                    st.pyplot(cluster_proprtion)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    iterations_k = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="iterations_k", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=cluster_metrics['iterations_k'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(cluster_metrics['iterations_k'], -0.004, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Iterations K")
+                    st.pyplot(iterations_k)
+                with col2:
+                    wcv = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=load_train(), x="wcv", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=cluster_metrics['wcv'], color='#BD783A',
+                                linestyle='--', linewidth=3)
+                    plt.text(cluster_metrics['wcv'], -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                    plt.title("Within Cluster Variation")
+                    st.pyplot(wcv)
+
+                with st.expander(":bar_chart: About the metric: Clustering"):
+                    st.subheader("Clustering")
+                    st.markdown("Calculating our clustering metrics relies on two\
+                                different clustering algorithms. Hierarchical\
+                                clustering requires a predetermined number of\
+                                clusters, k, and a linkage function. We opt to use\
+                                the Ward linkage function which minimizes the\
+                                variance of the Euclidean distances between points\
+                                within each of the k clusters. k-means clustering,\
+                                on the other hand, is initialized with the\
+                                coordinates of cluster centroids. Using these\
+                                centroid coordinates as a prototype, the k-means\
+                                algorithm minimizes the within-cluster\
+                                sum-of-squares (known as inertia) to find as many\
+                                clusters as centroid coordinates were inputted.")
+                    st.markdown("Our implementation of clustering begins with\
+                                hierarchical clustering on the Q shoeprint, and we\
+                                return the centroids of the clusters created. We\
+                                then use these centroids to initialize k-means\
+                                clusters once again on the Q shoeprint. The\
+                                clusters change slightly, so we return the updated\
+                                cluster centroids. We then run k-means clustering\
+                                on the K shoeprint with these centroids. We use the\
+                                similarities between the k-means clusters of Q and\
+                                K to quantify the similarity between the two\
+                                shoeprints. Our measures of similarity are the root\
+                                mean squared of the differences between cluster\
+                                sizes as a proportion of the number of points in\
+                                the entire print, the root mean squared of the\
+                                distances between the centroids of clusters in Q\
+                                and the corresponding updated centroids of the\
+                                clusters in K, the difference between the within\
+                                cluster variation in Q and K scaled by the within\
+                                cluster variation in Q, and the number of\
+                                iterations k-means clustering took to find clusters\
+                                in K.")
+
             st.divider()
 
             st.header("Classification")
             st.markdown(
-                "Based on a trained random forest model, we hypothesize whether the input shoeprint pair is mated or non-mated.")
+                "Based on a trained random forest model, we hypothesize whether \
+                    the input shoeprint pair is mated or non-mated.")
+
+            # Creating a Dataframe row containing the new metrics
+            row = {'q_pct': new_q_pct,
+                   'k_pct': new_k_pct}
+            row.update(dist_metrics)
+            row.update(cluster_metrics)
+            row = pd.DataFrame(row, index=[0])
             
+            # Loading cached model
+            rf_model = load_model()
+            # Subsetting relevant features
+            row = row[list(rf_model.feature_names_in_)].round(2)
+            # Indexing into rf probability for class=1 i.e. mated=True
+            score = rf_model.predict_proba(row)[0][1]
+            
+            prob = round(score, 2)
+            mated = "Mated" if score > 0.5 else "Non-Mated"
+            st.success(f"Our model predicts that the shoes are **_{mated}_**", icon="👟")
+            st.markdown("A summary of all the metrics we calculated:")
+            st.dataframe(row)
+            st.markdown(f"RF posterior probability: **{prob}**")
+
             with st.expander(":question: What is random forest?"):
                 st.subheader("Random Forest")
-                st.markdown("write")
+                st.markdown("Random forest is a machine learning algorithm that\
+                            takes in several variables and returns a number\
+                            between 0 and 1 representing a probability outcome.\
+                            A random forest is trained with a set of data and \
+                            employs many decision trees (hence, a forest) to \
+                            learn how to best predict the binary outcome (in \
+                            this case, mated or non-mated) based on the \
+                            variables available and determines which variables \
+                            are more important than others in predicting the \
+                            outcome. We trained our model on the similarity \
+                            metrics from thousands of known mated and non-mated \
+                            shoeprint pairs, and the model will assess based on \
+                            this training the probability that the input pair is \
+                            mated or non-mated.")
 
-
+    st.divider()
     st.markdown(
         "*Disclaimer: This tool should be used for research purposes only.*")
     st.markdown(
         "Developed and Maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, Ashley Zheng")
     st.markdown(
-        "Please [reach out to us](saatvikkher1@gmail.com) if you run into any issues or have any comments or questions.")
+        "Please [reach out to us](mailto:saatvikkher1@gmail.com) if you run into any issues or have any comments or questions.")
 
 
 # Run the app

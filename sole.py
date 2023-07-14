@@ -16,7 +16,8 @@ class Sole:
                  image_path: str = None,
                  border_width: int = 0,
                  is_image: bool = True,
-                 coords: pd.DataFrame = None) -> None:
+                 coords: pd.DataFrame = None,
+                 flipped: bool = False) -> None:
         # accessing metadata from csv in util.py
         # row = METADATA[METADATA['File Name'] == image_path[13:]]
 
@@ -41,6 +42,9 @@ class Sole:
             self._coords = self._image_to_coords(image_path, border_width)
         else:
             self._coords = coords
+
+        if flipped:
+            self.flip_coords()
 
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -132,13 +136,20 @@ class Sole:
             print("Must be a pandas DataFrame:", str(e))
 
     def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
-        '''Helper method which takes an image's file address and converts it 
-        to a set of x,y coordinates using edge detection
         '''
+        Helper method which takes an image's file address and converts it 
+        to a set of x,y coordinates using edge detection. If the image has a
+        border, setting border_width allows image cropping.
 
+        Inputs:
+            link (str): the location of the image
+            border_width (int): gets rid of this amount of pixels around border
+        
+        Returns:
+            pd.Dataframe: the coordinates of the image
+        '''
         # open image and convert to a grayscale numpy array
         img = Image.open(link)
-        img_arr = np.array(img)
         img = img.convert("L")
 
         # edge detection
@@ -161,6 +172,15 @@ class Sole:
         return df
 
     def plot(self, color=WILLIAMS_PURPLE, size: float = 0.5):
+        '''
+        Plots Sole based on original coordinates.
+
+        Inputs:
+            color (str)
+            size (float): size of plot points s=size in plt.scatter()
+
+        No returns
+        '''
 
         # Plot scatter plot 1
         plt.scatter(self.coords.x, self.coords.y, color=color, s=size)
@@ -169,3 +189,12 @@ class Sole:
         plt.tight_layout()
 
         plt.show()
+
+    def flip_coords(self):
+        '''
+        flip the coords for OOD dataset
+        '''
+        temp_coords = self._coords.copy(deep=True)
+        max_y = max(self._coord['y'])
+        temp_coords['y'] = temp_coords['y']*-1 + max_y
+        self.flip_coords = temp_coords
