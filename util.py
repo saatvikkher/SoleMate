@@ -123,53 +123,54 @@ def _create_knm_pairs_for_baseline(df, name: str, size: int = 5000):
     knms_df.rename(columns={0: 'q', 1: 'k'}, inplace=True)
     knms_df.to_csv(name, index=False)
 
-    def _create_km_pairs_for_blurry(df: pd.DataFrame, blur_level: int, name: str):
-        pairs = []
-        df = df.sort_values(by=['ShoeID', 'Blur_Level', 'Foot', 'Replicate'])
+def _create_km_pairs_for_blurry(df: pd.DataFrame, blur_level: int, name: str):
+    pairs = []
+    df = df.sort_values(by=['ShoeID', 'Blur_Level', 'Foot', 'Replicate'])
 
-        for i in range(len(df)):
-            for j in range(i+1, len(df)):
-                if (df.iloc[i].loc['ShoeID'] == df.iloc[j].loc['ShoeID'] and
-                    df.iloc[i].loc['Size'] == df.iloc[j].loc['Size'] and
-                    df.iloc[i].loc['Foot'] == df.iloc[j].loc['Foot'] and
-                    df.iloc[i].loc['Replicate'] == df.iloc[j].loc['Replicate'] and
-                    df.iloc[i].loc['Blur_Level'] == 0 and
-                    df.iloc[j].loc['Blur_Level'] == blur_level):
-                    pairs.append((df.iloc[i].loc['File_Name'], df.iloc[j].loc['File_Name']))
-                    break
+    for i in range(len(df)):
+        for j in range(i+1, len(df)):
+            if (df.iloc[i].loc['ShoeID'] == df.iloc[j].loc['ShoeID'] and
+                df.iloc[i].loc['Size'] == df.iloc[j].loc['Size'] and
+                df.iloc[i].loc['Foot'] == df.iloc[j].loc['Foot'] and
+                df.iloc[i].loc['Replicate'] == df.iloc[j].loc['Replicate'] and
+                df.iloc[i].loc['Blur_Level'] == 0 and
+                df.iloc[j].loc['Blur_Level'] == blur_level):
+                pairs.append((df.iloc[i].loc['File_Name'], df.iloc[j].loc['File_Name']))
+                break
 
-        pairs_df = pd.DataFrame(pairs)
-        pairs_df.rename(columns={0: 'k', 1: 'q'}, inplace=True)
-        pairs_df['mated'] = True
-        pairs_df.to_csv(name, index = False)
+    pairs_df = pd.DataFrame(pairs)
+    pairs_df.rename(columns={0: 'k', 1: 'q'}, inplace=True)
+    pairs_df['mated'] = True
+    pairs_df.to_csv(name, index = False)
 
-    def _create_knm_pairs_for_blurry(df: pd.DataFrame, blur_level: int, name: str, random_seed = 0):
-        np.random.seed(random_seed)
-        
-        pairs = []
-        
-        df_k = df[df['Blur_Level'] == 0].copy()
-        df_q = df[df['Blur_Level'] == blur_level].copy()
-        
-        df_k = df_k.sort_values(by=['ShoeID', 'Foot', 'Replicate']).reset_index(drop=True)
-        df_q = df_q.sort_values(by=['ShoeID', 'Foot', 'Replicate']).reset_index(drop=True)
+def _create_knm_pairs_for_blurry(df: pd.DataFrame, blur_level: int, name: str, random_seed = 0):
+    np.random.seed(random_seed)
+    
+    pairs = []
+    
+    df_k = df[df['Blur_Level'] == 0].copy()
+    df_q = df[df['Blur_Level'] == blur_level].copy()
+    
+    df_k = df_k.sort_values(by=['ShoeID', 'Foot', 'Replicate']).reset_index(drop=True)
+    df_q = df_q.sort_values(by=['ShoeID', 'Foot', 'Replicate']).reset_index(drop=True)
 
-        for i in range(len(df_k)):
+    for i in range(len(df_k)):
+        non_mated_row = np.random.randint(len(df_q))
+
+        # We keep iterating until we find something that satisfy the KNM condition
+        while (df_k.iloc[i]['ShoeID'] == df_q.iloc[non_mated_row]['ShoeID'] or
+            df_k.iloc[i]['Size'] != df_q.iloc[non_mated_row]['Size'] or
+            df_k.iloc[i]['Foot'] != df_q.iloc[non_mated_row]['Foot'] or
+            df_k.iloc[i]['Replicate'] != df_q.iloc[non_mated_row]['Replicate']):
             non_mated_row = np.random.randint(len(df_q))
 
-            # We keep iterating until we find something that satisfy the KNM condition
-            while (df_k.iloc[i]['ShoeID'] == df_q.iloc[non_mated_row]['ShoeID'] or
-                df_k.iloc[i]['Size'] != df_q.iloc[non_mated_row]['Size'] or
-                df_k.iloc[i]['Foot'] != df_q.iloc[non_mated_row]['Foot'] or
-                df_k.iloc[i]['Replicate'] != df_q.iloc[non_mated_row]['Replicate']):
-                non_mated_row = np.random.randint(len(df_q))
+        pairs.append((df_k.iloc[i]['File_Name'], df_q.iloc[non_mated_row]['File_Name']))
 
-            pairs.append((df_k.iloc[i]['File_Name'], df_q.iloc[non_mated_row]['File_Name']))
+    pairs_df = pd.DataFrame(pairs)
+    pairs_df.rename(columns={0: 'k', 1: 'q'}, inplace=True)
+    pairs_df['mated'] = False
+    pairs_df.to_csv(name, index=False)
 
-        pairs_df = pd.DataFrame(pairs)
-        pairs_df.rename(columns={0: 'k', 1: 'q'}, inplace=True)
-        pairs_df['mated'] = False
-        pairs_df.to_csv(name, index=False)
 def create_km_pairs_OOD(df, name: str):
     '''
     Creating known-mated pairs for out of distribution data. Mated pairs were 
