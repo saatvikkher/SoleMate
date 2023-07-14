@@ -5,9 +5,7 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-
-### UNCOMMENT THIS BEFORE RUNNING:
-# sys.stdout = open('./TEST_OOD.log', 'w')
+sys.stdout = open('./TEST_OOD.log', 'w')
 
 print("[TEST OOD] Started.")
 
@@ -15,7 +13,7 @@ print("[TEST OOD] Started.")
 km_test = pd.read_csv("KM_OOD_test.csv")
 knm_test = pd.read_csv("KNM_OOD_test.csv")
 
-combined_test = pd.concat([km_test, knm_test], ignore_index=True)
+combined_test = pd.concat([km_test, knm_test], ignore_index=True)[:3]
 
 # Grab the file names and mated status of Q and K
 Q_files = combined_test.q.values
@@ -30,7 +28,8 @@ for i in range(len(combined_test)):
         print("[TEST OOD] Progress: ", (i*100) / len(combined_test))
     try:
         row = pd.DataFrame(process_image(
-            Q_files[i], K_files[i], mated[i]), index=[0])
+            Q_files[i], K_files[i], mated[i], partial_type="full", 
+            folder_path="OOD/"), index=[0])
         df = pd.concat([df, row], ignore_index=True)
         df.to_csv("result_test_OOD_071423.csv", index=False)
     except Exception as e:
@@ -40,3 +39,6 @@ for i in range(len(combined_test)):
     gc.collect()
 
 print("[TEST OOD] Complete!")
+
+
+## NEEED TO FLIP THE IMAGE
