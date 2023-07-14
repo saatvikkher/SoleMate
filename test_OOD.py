@@ -5,36 +5,38 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('./TRAIN_BASELINE_0_200.log', 'w')
 
-print("[TRAIN BASELINE 0 - 200] Started.")
+### UNCOMMENT THIS BEFORE RUNNING:
+# sys.stdout = open('./TEST_OOD.log', 'w')
+
+print("[TEST OOD] Started.")
 
 # Read in training split
-km_train = pd.read_csv("KM_BASELINE_TRAIN.csv")
-knm_train = pd.read_csv("KNM_BASELINE_TRAIN.csv")
+km_test = pd.read_csv("KM_OOD_test.csv")
+knm_test = pd.read_csv("KNM_OOD_test.csv")
 
-combined_train = pd.concat([km_train, knm_train], ignore_index=True)[:200]
+combined_test = pd.concat([km_test, knm_test], ignore_index=True)
 
 # Grab the file names and mated status of Q and K
-Q_files = combined_train.q.values
-K_files = combined_train.k.values
-mated = combined_train.mated.values  # Value of 'mated' parameter
+Q_files = combined_test.q.values
+K_files = combined_test.k.values
+mated = combined_test.mated.values  # Value of 'mated' parameter
 
 df = pd.DataFrame()
 
-for i in range(len(combined_train)):
+for i in range(len(combined_test)):
     start = time.time()
     if i % 20 == 0:
-        print("[TRAIN BASELINE 0 - 200] Progress: ", (i*100) / len(combined_train))
+        print("[TEST OOD] Progress: ", (i*100) / len(combined_test))
     try:
         row = pd.DataFrame(process_image(
             Q_files[i], K_files[i], mated[i]), index=[0])
         df = pd.concat([df, row], ignore_index=True)
-        df.to_csv("result_train_baseline_0713_0_200.csv", index=False)
+        df.to_csv("result_test_OOD_071423.csv", index=False)
     except Exception as e:
-        print("[TRAIN BASELINE 0 - 200] Caught error at index " + str(i) + str(e))
+        print("[TEST OOD] Caught error at index " + str(i) + str(e))
     end = time.time()
-    print("[TRAIN BASELINE 0 - 200]: Time for iteration ", str(i), ": ", str(end - start))
+    print("[TEST OOD]: Time for iteration ", str(i), ": ", str(end - start))
     gc.collect()
 
-print("[TRAIN BASELINE 0 - 200] Complete!")
+print("[TEST OOD] Complete!")

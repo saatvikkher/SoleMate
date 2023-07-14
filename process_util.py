@@ -4,9 +4,9 @@ from solepaircompare import SolePairCompare
 from util import METADATA
 
 
-def process_image(Q_file, K_file, mated, partial_type="full"):
-    Q = Sole("2DScanImages/" + Q_file, border_width=160)
-    K = Sole("2DScanImages/" + K_file, border_width=160)
+def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DScanImages/"):
+    Q = Sole(folder_path + Q_file, border_width=160)
+    K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
 
     q_row = METADATA[METADATA['File Name'] == Q_file]
@@ -36,14 +36,14 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
                              shift_right=True, shift_down=True, shift_up=True)  # icp is called here
     elif partial_type == "toe":
         toe_coords = Q.coords[Q.coords.x <= middle_x]
-        toe = Sole(image_path="2DScanImages/"+Q_file,
+        toe = Sole(image_path=folder_path+Q_file,
                    is_image=False, coords=toe_coords)
         pair = SolePair(toe, K, mated=mated)
         sc = SolePairCompare(pair, icp_downsample_rate=0.2,
                              two_way=True, shift_right=True)
     elif partial_type == "heel":
         heel_coords = Q.coords[Q.coords.x > middle_x]
-        heel = Sole(image_path="2DScanImages/"+Q_file,
+        heel = Sole(image_path=folder_path+Q_file,
                     is_image=False, coords=heel_coords)
         pair = SolePair(heel, K, mated=mated)
         sc = SolePairCompare(pair, icp_downsample_rate=0.2,
@@ -51,14 +51,14 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
     elif partial_type == "inside":
         if q_foot == "R":
             inside_coords = Q.coords[Q.coords.y <= middle_y]
-            inside = Sole(image_path="2DScanImages/"+Q_file,
+            inside = Sole(image_path=folder_path+Q_file,
                           is_image=False, coords=inside_coords)
             pair = SolePair(inside, K, mated=mated)
             sc = SolePairCompare(
                 pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
         else:
             inside_coords = Q.coords[Q.coords.y >= middle_y]
-            inside = Sole(image_path="2DScanImages/"+Q_file,
+            inside = Sole(image_path=folder_path+Q_file,
                           is_image=False, coords=inside_coords)
             pair = SolePair(inside, K, mated=mated)
             sc = SolePairCompare(pair, icp_downsample_rate=0.2,
@@ -66,14 +66,14 @@ def process_image(Q_file, K_file, mated, partial_type="full"):
     elif partial_type == "outside":
         if q_foot == "R":
             outside_coords = Q.coords[Q.coords.y > middle_y]
-            outside = Sole(image_path="2DScanImages/"+Q_file,
+            outside = Sole(image_path=folder_path+Q_file,
                            is_image=False, coords=outside_coords)
             pair = SolePair(outside, K, mated=mated)
             sc = SolePairCompare(pair, icp_downsample_rate=0.2,
                                  two_way=True, shift_down=True)
         else:
             outside_coords = Q.coords[Q.coords.y < middle_y]
-            outside = Sole(image_path="2DScanImages/"+Q_file,
+            outside = Sole(image_path=folder_path+Q_file,
                            is_image=False, coords=outside_coords)
             pair = SolePair(outside, K, mated=mated)
             sc = SolePairCompare(
