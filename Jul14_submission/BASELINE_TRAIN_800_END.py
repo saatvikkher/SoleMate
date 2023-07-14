@@ -5,15 +5,15 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('./BASELINE_TRAIN_0_400.log', 'w')
+sys.stdout = open('./BASELINE_TRAIN_800_END.log', 'w')
 
-print("[BASELINE TRAIN 0 - 400] Started.")
+print("[BASELINE TRAIN 800 - end] Started.")
 
 # Read in training split
 km_train = pd.read_csv("Jul14_submission/pair_info/BASELINE_TRAIN_KM.csv")
 knm_train = pd.read_csv("Jul14_submission/pair_info/BASELINE_TRAIN_KNM.csv")
 
-combined_train = pd.concat([km_train, knm_train], ignore_index=True)[:400]
+combined_train = pd.concat([km_train, knm_train], ignore_index=True)[800:]
 
 # Grab the file names and mated status of Q and K
 Q_files = combined_train.q.values
@@ -30,11 +30,11 @@ for i in range(len(combined_train)):
         row = pd.DataFrame(process_image(
             Q_files[i], K_files[i], mated[i]), index=[0])
         df = pd.concat([df, row], ignore_index=True)
-        df.to_csv("RESULT_BASELINE_TRAIN_0_400.csv", index=False)
+        df.to_csv("RESULT_BASELINE_TRAIN_800_END.csv", index=False)
     except Exception as e:
-        print("[BASELINE TRAIN 0 - 400] Caught error at index " + str(i) + str(e))
+        print("[BASELINE TRAIN 800 - end] Caught error at index " + str(i) + str(e))
     end = time.time()
-    print("[BASELINE TRAIN 0 - 400]: Time for iteration ", str(i), ": ", str(end - start))
+    print("[BASELINE TRAIN 800 - end]: Time for iteration ", str(i), ": ", str(end - start))
     gc.collect()
 
-print("[TRAIN BASELINE 0 - 400] Complete!")
+print("[TRAIN BASELINE 800 - end] Complete!")
