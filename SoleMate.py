@@ -5,6 +5,7 @@ from process_util import process_image
 from sole import Sole
 from solepair import SolePair
 from solepaircompare import SolePairCompare
+import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -12,13 +13,11 @@ from util import WILLIAMS_GOLD, WILLIAMS_PURPLE
 import pickle
 
 
-@st.cache_data
 def load_train():
     train = pd.read_csv("result_train_0711.csv")
     return train
 
 
-@st.cache_resource
 def load_model():
     full_model = pickle.load(open('full.pkl', 'rb'))
     return full_model
@@ -54,8 +53,8 @@ def main():
     # Sidebar
     with st.sidebar:
         # Upload images
-        Q_file = st.file_uploader("Upload shoeprint Q", type=["tiff"])
-        K_file = st.file_uploader("Upload shoeprint K", type=["tiff"])
+        Q_file = st.file_uploader("Upload shoeprint Q", type=["png", "jpg", "tiff"])
+        K_file = st.file_uploader("Upload shoeprint K", type=["png", "jpg", "tiff"])
 
         # Select border-width
         q_border_width = st.number_input("Select Q border width:", 0, 300, 160)
@@ -68,25 +67,54 @@ def main():
             st.image("logo.png")
     with col2:
         st.title("SoleMate")
-        st.subheader("An End-To-End System for Shoe-Print Pattern Matching")
+        st.subheader("An End-To-End System for Shoeprint Pattern Matching")
         st.markdown("Williams College SMALL REU 2023")
 
     st.divider()
 
     # Summary
-    st.header("Summary")
+    st.header("Welcome!")
     st.markdown("*SoleMate* is a tool for determining whether or not footwear outsole impressions match. Our algorithm offers a fast\
-                and robust method to match the *K* shoe (the known shoe of a suspect)\
-                to a *Q* shoe (the questioned shoeprint found at the crime scene). We use Iterative\
+                and robust method to match the *K* shoeprint (the known shoeprint of a suspect)\
+                to a *Q* shoeprint (the questioned shoeprint found at the crime scene). We use Iterative\
                 Closest Point (ICP), a point cloud registration algorithm, to find the best affine transformation\
                 to align two shoeprints. We then calculate metrics and compare them to training data.\
                 Using these metrics in a random forest model, we then identify the selected\
-                shoe pair as mated or non-mated.")
-    st.markdown("To use this tool, upload two images on the left: a Q shoe and\
-                a K shoe. If the images come with a frame or ruler, designate\
-                the width of the border in pixels with the slider. Finally,\
-                click the \"Run SoleMate\" button to run the algorithm and see\
-                the results!")
+                shoeprint pair as mated or non-mated.")
+    st.markdown("To use this tool, upload two images on the left: a Q shoeprint and\
+                a K shoeprint. If the images come with a frame or ruler, designate\
+                the width of the border in pixels. Click the\
+                \"Run SoleMate\" button to run the algorithm and see the\
+                results!")
+    
+    with st.expander(":book: Introduction to shoeprint pattern matching"):
+                st.subheader("Shoeprint Pattern Matching")
+                st.markdown("Footwear outsole impressions (shoeprints) are often\
+                            found at the scene of a crime and consist of the\
+                            marks on a surface created when the materials picked\
+                            up by a shoe (e.g., dirt, paint, blood) make contact\
+                            with the surface. Shoeprint evidence can be powerful\
+                            in connecting an individual to their presence at the\
+                            scene of a crime should a known shoe be judged to\
+                            match a crime scene print.")
+                st.markdown("Characteristics of shoeprints can be broken down\
+                            into three categories. Class characteristics include\
+                            the size, brand, make, and model of a shoe. Subclass\
+                            characteristics consist of smaller differences in\
+                            the pattern on the outsole. Individual\
+                            characteristics are the traits unique to a single\
+                            outsole caused by wear and tear. These\
+                            characteristics are known as randomly acquired\
+                            characteristics (RACs).")
+                st.markdown("Proving that two shoeprints were made by the same\
+                            shoe requires that their RACs match. It can be\
+                            extremely difficult to detect such small\
+                            differences in outsole impressions, even for a\
+                            highly trained forensic examiner. We created this\
+                            tool to automate the pattern matching process,\
+                            reducing the possibility for human error and\
+                            allowing us to quantify the degree of similarity\
+                            between two shoeprints.")
 
     if st.sidebar.button("Run SoleMate"):
         st.divider()
@@ -99,7 +127,7 @@ def main():
             # ICP
             st.header("ICP Alignment")
             st.markdown(
-                "We calculate the best rigid body transformation to align the K shoe to the Q shoe.")
+                "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
             with st.spinner("Aligning soles..."):
                 sc = SolePairCompare(pair, icp_downsample_rate=0.02, two_way=True, shift_left=True,
                                      shift_right=True, shift_down=True, shift_up=True)
@@ -171,7 +199,7 @@ def main():
                                 linestyle='--', linewidth=3)
                     plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
                              horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
-                    plt.title("Q Percent-Overlap")
+                    plt.title("Q Percent Overlap")
                     st.pyplot(q_pct)
                 with col2:
                     k_pct = plt.figure(figsize=(10, 7))
@@ -182,7 +210,7 @@ def main():
                                 linestyle='--', linewidth=3)
                     plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
                              horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
-                    plt.title("K Percent-Overlap")
+                    plt.title("K Percent Overlap")
                     st.pyplot(k_pct)
 
                 with st.expander(":bar_chart: About the metric: Overlap"):
@@ -406,7 +434,7 @@ def main():
             
             prob = round(score, 2)
             mated = "Mated" if score > 0.5 else "Non-Mated"
-            st.success(f"Our model predicts that the shoes are **_{mated}_**", icon="👟")
+            st.success(f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
             st.markdown("A summary of all the metrics we calculated:")
             st.dataframe(row)
             st.markdown(f"RF posterior probability: **{prob}**")
@@ -424,15 +452,32 @@ def main():
                             are more important than others in predicting the \
                             outcome. We trained our model on the similarity \
                             metrics from thousands of known mated and non-mated \
-                            shoeprint pairs, and the model will assess based on \
-                            this training the probability that the input pair is \
-                            mated or non-mated.")
-
+                            shoeprint pairs, \
+                            and the model will assess based on this training the \
+                            probability that the input pair is mated or \
+                            non-mated.")
+                
+            with st.expander(":technologist: Our random forest implentation"):
+                st.subheader("Our Random Forest Implementation")
+                st.markdown("We trained our random forest on data from \
+                            [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).\
+                            To create known mated pairs, we selected different\
+                            scans from the same shoe taken at the same time, and\
+                            to create non-mated pairs, we selected scans from\
+                            different shoes of the same make, model, and size to\
+                            simulate similar shoes with different randomly\
+                            acquired characteristics. We trained our random\
+                            forest on 70\% of these data and tested it with the\
+                            remaining completely independent 30\% (i.e., no\
+                            image appears in both the training and test set).")
+    
     st.divider()
     st.markdown(
-        "*Disclaimer: This tool should be used for research purposes only.*")
+        "*Disclaimer: This tool should be used for research and education purposes only.*")
     st.markdown(
-        "Developed and Maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, Ashley Zheng")
+        "Developed and maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, and Ashley Zheng.")
+    st.markdown(
+        "We conducted our research in collaboration with the [Center for Statistics and Applications in Forensic Evidence](https://forensicstats.org/).")
     st.markdown(
         "Please [reach out to us](mailto:saatvikkher1@gmail.com) if you run into any issues or have any comments or questions.")
 
