@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 METADATA = pd.read_csv("2DScanImages/Image-info.csv")
+METADATA_BLURRY = pd.read_csv("Blurry/metadata.csv")
 BLACK_WHITE_THRESHOLD = 85  # Bottom third of grayscale: 255 / 3 = 85
 WILLIAMS_PURPLE = "#500082"
 WILLIAMS_GOLD = "#FFBE0A"
@@ -229,4 +230,83 @@ def create_knm_pairs_OOD(df, name: str, size: int = 2407):
     knms_df = pd.DataFrame(knms).sample(size)
     knms_df = knms_df.reset_index(drop=True)
     knms_df.rename(columns = {0: 'q', 1 : 'k'}, inplace=True)
+    knms_df.to_csv(name, index=False)
+
+
+def _create_km_pairs_for_diff_times(df, 
+                                    name: str, 
+                                    K_visit_number: str = "2"):
+    '''
+    Inputs:
+        - df: (Pandas DataFrame) The metadata dataframe
+        - name: (str) The name of the file you want to output to
+        - K_visit_number: (str) "2" or "3" depending on the user
+    '''
+
+    kms = []
+
+    df = df.sort_values(by='Shoe Number')
+
+    for i in range(len(df)):
+        print(i)
+        for j in range(i+1, len(df)):
+            if (df.iloc[i].loc['Shoe Number'] == df.iloc[j].loc['Shoe Number'] and
+                    str(df.iloc[i].loc['Visit Number']) == "1" and
+                    str(df.iloc[j].loc['Visit Number']) == K_visit_number and
+                    df.iloc[i].loc['Foot'] == df.iloc[j].loc['Foot'] and
+                    df.iloc[i].loc['Shoe Size'] == df.iloc[j].loc['Shoe Size']
+                ):
+                kms.append((df.iloc[i].loc['File Name'],
+                           df.iloc[j].loc['File Name']))
+                break
+
+    kms_df = pd.DataFrame(kms)
+    kms_df.rename(columns={0: 'q', 1: 'k'}, inplace=True)
+    kms_df.to_csv(name, index=False)
+
+
+def _create_knm_pairs_for_diff_times(df, 
+                                     name: str, 
+                                     size: int = 5000, 
+                                     K_visit_number: str = "2"):
+    '''
+    Inputs:
+        - df: (Pandas DataFrame) The metadata dataframe
+        - name: (str) The name of the file you want to output to
+        - size: (int) The upper limit of how many KNM pairs to create
+        - K_visit_number: (str) "2" or "3" depending on the user
+    '''
+    knms = []
+
+    df[df['Visit Number'].isin([1, int(K_visit_number)])]
+
+    for i in range(len(df)):
+        print(i)
+        non_mated_row = np.random.randint(len(df))
+
+        counter = 0
+        found = True
+
+        # We keep iterating until we find something that satisfy the KNM condition
+        while (df.iloc[i].loc['File Name'] == df.iloc[non_mated_row].loc['File Name'] or
+               str(df.iloc[i].loc['Visit Number']) != "1" or
+               str(df.iloc[non_mated_row].loc['Visit Number']) != K_visit_number or
+               df.iloc[i].loc['Shoe Number'] == df.iloc[non_mated_row].loc['Shoe Number'] or
+               df.iloc[i].loc['Shoe Size'] != df.iloc[non_mated_row].loc['Shoe Size'] or
+               df.iloc[i].loc['Shoe Make/Model'] != df.iloc[non_mated_row].loc['Shoe Make/Model'] or
+               df.iloc[i].loc['Foot'] != df.iloc[non_mated_row].loc['Foot']):
+            non_mated_row = np.random.randint(len(df))
+            counter += 1
+
+            if counter > 100:
+                found = False
+                break
+
+        if found:
+            knms.append((df.iloc[i].loc['File Name'],
+                        df.iloc[non_mated_row].loc['File Name']))
+
+    knms_df = pd.DataFrame(knms).sample(size)
+    knms_df = knms_df.reset_index(drop=True)
+    knms_df.rename(columns={0: 'q', 1: 'k'}, inplace=True)
     knms_df.to_csv(name, index=False)
