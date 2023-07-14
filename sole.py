@@ -16,7 +16,8 @@ class Sole:
                  image_path: str = None,
                  border_width: int = 0,
                  is_image: bool = True,
-                 coords: pd.DataFrame = None) -> None:
+                 coords: pd.DataFrame = None,
+                 flipped: bool = False) -> None:
         # accessing metadata from csv in util.py
         # row = METADATA[METADATA['File Name'] == image_path[13:]]
 
@@ -41,6 +42,9 @@ class Sole:
             self._coords = self._image_to_coords(image_path, border_width)
         else:
             self._coords = coords
+
+        if flipped:
+            self.flip_coords()
 
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -185,3 +189,12 @@ class Sole:
         plt.tight_layout()
 
         plt.show()
+
+    def flip_coords(self):
+        '''
+        flip the coords for OOD dataset
+        '''
+        temp_coords = self._coords.copy(deep=True)
+        max_y = max(self._coord['y'])
+        temp_coords['y'] = temp_coords['y']*-1 + max_y
+        self.flip_coords = temp_coords
