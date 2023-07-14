@@ -145,7 +145,14 @@ def main():
                 new_q_pct = sc.percent_overlap()
                 new_k_pct = sc.percent_overlap(Q_as_base=False)
                 dist_metrics = sc.min_dist()
-                cluster_metrics = sc.cluster_metrics()
+                all_cluster_metrics = sc.cluster_metrics()
+                # Subsetting only cluster metrics with n_clusters=20
+                cluster_metrics = {}
+                cluster_metrics['centroid_distance'] = all_cluster_metrics['centroid_distance_n_clusters_20']
+                cluster_metrics['cluster_proprtion'] = all_cluster_metrics['cluster_proprtion_n_clusters_20']
+                cluster_metrics['iterations_k'] = all_cluster_metrics['iterations_k_n_clusters_20']
+                cluster_metrics['wcv'] = all_cluster_metrics['wcv_ratio_n_clusters_20']
+
 
                 st.header("Metrics")
                 st.markdown(
@@ -402,7 +409,7 @@ def main():
             st.success(f"Our model predicts that the shoes are **_{mated}_**", icon="👟")
             st.markdown("A summary of all the metrics we calculated:")
             st.dataframe(row)
-            st.markdown(f"Your RF prediction score is: **{prob}**")
+            st.markdown(f"RF posterior probability: **{prob}**")
 
             with st.expander(":question: What is random forest?"):
                 st.subheader("Random Forest")
