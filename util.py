@@ -3,6 +3,7 @@ import numpy as np
 
 METADATA = pd.read_csv("2DScanImages/Image-info.csv")
 METADATA_BLURRY = pd.read_csv("Blurry/metadata.csv")
+METADATA_OOD = pd.read_csv("OOD/metadata.csv")
 BLACK_WHITE_THRESHOLD = 85  # Bottom third of grayscale: 255 / 3 = 85
 WILLIAMS_PURPLE = "#500082"
 WILLIAMS_GOLD = "#FFBE0A"

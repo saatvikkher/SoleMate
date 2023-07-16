@@ -44,7 +44,7 @@ class Sole:
             self._coords = coords
 
         if flipped:
-            self.flip_coords()
+            self.coords = self.flip_coords()
 
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -135,6 +135,19 @@ class Sole:
         except Exception as e:
             print("Must be a pandas DataFrame:", str(e))
 
+    # @property
+    # def flip_coords(self) -> pd.DataFrame:
+    #     '''Getter method for flipped coordinates'''
+    #     return self._flip_coords 
+    
+    # @flip_coords.setter
+    # def coords(self, value) -> None:
+    #     '''Setter method for dataframe of flipped coordinates'''
+    #     try:
+    #         self._flip_coords = value
+    #     except Exception as e:
+    #         print("Must be a pandas DataFrame:", str(e))
+
     def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
         '''
         Helper method which takes an image's file address and converts it 
@@ -201,7 +214,9 @@ class Sole:
         Returns:
             None
         '''
-        temp_coords = self._coords.copy(deep=True)
-        max_y = max(self._coord['y'])
+        temp_coords = self.coords.copy(deep=True)
+        max_y = max(self.coords['y'])
         temp_coords['y'] = temp_coords['y']*-1 + max_y
-        self.flip_coords = temp_coords
+        return temp_coords
+        # self.coords = temp_coords
+        # self.flip_coords = temp_coords

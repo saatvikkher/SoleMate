@@ -5,15 +5,14 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('./TEST_OOD.log', 'w')
+sys.stdout = open('./OOD_TEST.log', 'w')
 
 print("[TEST OOD] Started.")
 
 # Read in training split
 km_test = pd.read_csv("Jul14_submission/pair_info/OOD_TEST_KM.csv")
 knm_test = pd.read_csv("Jul14_submission/pair_info/OOD_TEST_KNM.csv")
-
-combined_test = pd.concat([km_test, knm_test], ignore_index=True)[:3]
+combined_test = pd.concat([km_test, knm_test], ignore_index=True)
 
 # Grab the file names and mated status of Q and K
 Q_files = combined_test.q.values
