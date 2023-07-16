@@ -1,7 +1,7 @@
 from sole import Sole
 from solepair import SolePair
 from solepaircompare import SolePairCompare
-from util import METADATA, METADATA_BLURRY, OPP_FOOT
+from util import METADATA, METADATA_BLURRY, METADATA_OOD, OPP_FOOT
 
 
 def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DScanImages/"):
@@ -126,27 +126,27 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
 def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="OOD/"):
     if folder_path == "OOD/" and mated == False:
         Q = Sole(folder_path + Q_file, border_width=160, flipped=True)
-        q_foot = OPP_FOOT[Q_file[6:7]]
+        q_foot = OPP_FOOT[Q_file[7:8]]
     else:
         Q = Sole(folder_path + Q_file, border_width=160)
-        q_foot = Q_file[6:7]
+        q_foot = Q_file[7:8]
     K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
 
-    q_row = METADATA[METADATA['File Name'] == Q_file]
+    q_row = METADATA_OOD[METADATA_OOD['File Name'] == Q_file]
 
     q_file_name = q_row['File Name'].iloc[0]
-    q_number = q_row['Shoe Number'].iloc[0]
-    q_model = q_row['Shoe Make/Model'].iloc[0]
-    q_size = q_row['Shoe Size'].iloc[0]
+    q_number = q_row['ID'].iloc[0]
+    q_model = None
+    q_size = q_row['Size'].iloc[0]
 
-    k_row = METADATA[METADATA['File Name'] == K_file]
+    k_row = METADATA_OOD[METADATA_OOD['File Name'] == K_file]
 
     k_file_name = k_row['File Name'].iloc[0]
-    k_number = k_row['Shoe Number'].iloc[0]
-    k_model = k_row['Shoe Make/Model'].iloc[0]
-    k_size = k_row['Shoe Size'].iloc[0]
-    k_foot = K_file[6:7]
+    k_number = k_row['ID'].iloc[0]
+    k_model = None
+    k_size = k_row['Size'].iloc[0]
+    k_foot = k_row['Foot'].iloc[0]
 
     x_series = Q.coords.x
     y_series = Q.coords.y
