@@ -32,6 +32,9 @@ class SolePairCompare:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
+
+        # Sorting the icp_downsample_rates to optimize time efficiency of the short circuit
+        icp_downsample_rates.sort()
             
         best_icp_downsample_rate = None
         best_percent_overlap = -1
@@ -57,7 +60,7 @@ class SolePairCompare:
                 best_percent_overlap = po
                 best_icp_downsample_rate = icp_downsample_rate
 
-        # Short circuit: if there the best_icp_downsample_rate equals the last
+        # Short circuit: if the best_icp_downsample_rate equals the last
         # element in icp_downsample_rates, then we don't need to run the ICP 
         # again to update pair.T in place.
         if icp_downsample_rates[-1] != best_icp_downsample_rate:
