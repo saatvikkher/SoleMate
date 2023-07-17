@@ -157,7 +157,7 @@ def main():
             st.markdown(
                 "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
             with st.spinner("Aligning soles..."):
-                sc = SolePairCompare(pair, icp_downsample_rate=0.02, two_way=True, shift_left=True,
+                sc = SolePairCompare(pair, icp_downsample_rates=[0.02], two_way=True, shift_left=True,
                                      shift_right=True, shift_down=True, shift_up=True)
             K_down = K.coords.sample(frac=0.1)
             K_al_down = K.aligned_coordinates.sample(frac=0.1)
