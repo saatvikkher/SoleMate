@@ -56,9 +56,37 @@ def main():
         Q_file = st.file_uploader("Upload shoeprint Q", type=["png", "jpg", "tiff"])
         K_file = st.file_uploader("Upload shoeprint K", type=["png", "jpg", "tiff"])
 
-        # Select border-width
-        q_border_width = st.number_input("Select Q border width:", 0, 300, 160)
-        k_border_width = st.number_input("Select K border width:", 0, 300, 160)
+        # Use example pair
+        st.markdown("**OR**")
+
+        #if use_example:
+        pair = st.selectbox('Use a preset example pair:',
+                                ('None', 'Mated Pair #1', 'Mated Pair #2', 
+                                'Non-Mated Pair #1', 'Non-Mated Pair #2'))
+        if pair == 'Mated Pair #1':
+            Q_file = "example_shoeprints/mated_1_q.tiff"
+            K_file = "example_shoeprints/mated_1_k.tiff"
+            q_border_width = 160
+            k_border_width = 160
+        elif pair == 'Mated Pair #2':
+            Q_file = "example_shoeprints/mated_2_q.tiff"
+            K_file = "example_shoeprints/mated_2_k.tiff"
+            q_border_width = 160
+            k_border_width = 160
+        elif pair == 'Non-Mated Pair #1':
+            Q_file = "example_shoeprints/nonmated_1_q.tiff"
+            K_file = "example_shoeprints/nonmated_1_k.tiff"
+            q_border_width = 160
+            k_border_width = 160
+        elif pair == 'Non-Mated Pair #2':
+            Q_file = "example_shoeprints/nonmated_2_q.tiff"
+            K_file = "example_shoeprints/nonmated_2_k.tiff"
+            q_border_width = 160
+            k_border_width = 160
+        elif pair == 'None':
+            # Select border-width
+            q_border_width = st.number_input("Select Q border width:", 0, 300, 0)
+            k_border_width = st.number_input("Select K border width:", 0, 300, 0)
 
     col1, col2 = st.columns([1, 1.5])
     with col1:
@@ -81,11 +109,11 @@ def main():
                 to align two shoeprints. We then calculate metrics and compare them to training data.\
                 Using these metrics in a random forest model, we then identify the selected\
                 shoeprint pair as mated or non-mated.")
-    st.markdown("To use this tool, upload two images on the left: a Q shoeprint and\
-                a K shoeprint. If the images come with a frame or ruler, designate\
-                the width of the border in pixels. Click the\
-                \"Run SoleMate\" button to run the algorithm and see the\
-                results!")
+    st.markdown("To use this tool, upload a Q shoeprint and a K shoeprint on\
+                the left, or select a preset example shoeprint pair. If the\
+                images come with a frame or ruler, designate the width of the\
+                border in pixels. Click the \"Run SoleMate\" button to run the\
+                algorithm and see the results!")
     
     with st.expander(":book: Introduction to shoeprint pattern matching"):
                 st.subheader("Shoeprint Pattern Matching")
@@ -129,7 +157,7 @@ def main():
             st.markdown(
                 "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
             with st.spinner("Aligning soles..."):
-                sc = SolePairCompare(pair, icp_downsample_rate=0.02, two_way=True, shift_left=True,
+                sc = SolePairCompare(pair, icp_downsample_rates=[0.02], two_way=True, shift_left=True,
                                      shift_right=True, shift_down=True, shift_up=True)
             K_down = K.coords.sample(frac=0.1)
             K_al_down = K.aligned_coordinates.sample(frac=0.1)
