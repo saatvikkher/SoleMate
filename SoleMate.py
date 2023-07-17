@@ -14,7 +14,7 @@ import pickle
 
 
 def load_train():
-    train = pd.read_csv("result_train_0711.csv")
+    train = pd.read_csv("old_results/0711/result_train_0711.csv")
     return train
 
 
