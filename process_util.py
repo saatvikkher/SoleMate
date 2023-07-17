@@ -31,53 +31,43 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
     middle_x = x_series.quantile(0.025) + ((x_series.quantile(0.975) - x_series.quantile(0.025)) / 2)
     middle_y = y_series.quantile(0.025) + ((y_series.quantile(0.975) - y_series.quantile(0.025)) / 2)
 
-    if partial_type == "full":
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2, two_way=True, shift_left=True,
-                             shift_right=True, shift_down=True, shift_up=True)  # icp is called here
-    elif partial_type == "toe":
+    if partial_type == "toe":
         toe_coords = Q.coords[Q.coords.x <= middle_x]
         toe = Sole(image_path=folder_path+Q_file,
                    is_image=False, coords=toe_coords)
         pair = SolePair(toe, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_right=True)
+        
     elif partial_type == "heel":
         heel_coords = Q.coords[Q.coords.x > middle_x]
         heel = Sole(image_path=folder_path+Q_file,
                     is_image=False, coords=heel_coords)
         pair = SolePair(heel, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_left=True)
+        
     elif partial_type == "inside":
         if q_foot == "R":
             inside_coords = Q.coords[Q.coords.y <= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
         else:
             inside_coords = Q.coords[Q.coords.y >= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
+        inside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=inside_coords)
+        pair = SolePair(inside, K, mated=mated)
+        
     elif partial_type == "outside":
         if q_foot == "R":
             outside_coords = Q.coords[Q.coords.y > middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
         else:
             outside_coords = Q.coords[Q.coords.y < middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
+        outside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=outside_coords)
+        pair = SolePair(outside, K, mated=mated)
+    
+    sc = SolePairCompare(pair, 
+                         icp_downsample_rate=[0.05, 0.2, 0.5], 
+                         two_way=True, 
+                         shift_left=True,
+                         shift_right=True, 
+                         shift_down=True, 
+                         shift_up=True)
 
     # Cut K before running any metric
     sc.cut_k(partial_type, k_foot)
@@ -154,53 +144,40 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
     middle_x = x_series.quantile(0.025) + ((x_series.quantile(0.975) - x_series.quantile(0.025)) / 2)
     middle_y = y_series.quantile(0.025) + ((y_series.quantile(0.975) - y_series.quantile(0.025)) / 2)
 
-    if partial_type == "full":
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2, two_way=True, shift_left=True,
-                             shift_right=True, shift_down=True, shift_up=True)  # icp is called here
-    elif partial_type == "toe":
+    if partial_type == "toe":
         toe_coords = Q.coords[Q.coords.x <= middle_x]
         toe = Sole(image_path=folder_path+Q_file,
                    is_image=False, coords=toe_coords)
         pair = SolePair(toe, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_right=True)
     elif partial_type == "heel":
         heel_coords = Q.coords[Q.coords.x > middle_x]
         heel = Sole(image_path=folder_path+Q_file,
                     is_image=False, coords=heel_coords)
         pair = SolePair(heel, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_left=True)
     elif partial_type == "inside":
         if q_foot == "R":
             inside_coords = Q.coords[Q.coords.y <= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
         else:
             inside_coords = Q.coords[Q.coords.y >= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
+        inside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=inside_coords)
+        pair = SolePair(inside, K, mated=mated)
     elif partial_type == "outside":
         if q_foot == "R":
             outside_coords = Q.coords[Q.coords.y > middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
         else:
             outside_coords = Q.coords[Q.coords.y < middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
+        outside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=outside_coords)
+        pair = SolePair(outside, K, mated=mated)
+    
+    sc = SolePairCompare(pair, 
+                         icp_downsample_rate=[0.05, 0.2, 0.5], 
+                         two_way=True, 
+                         shift_left=True,
+                         shift_right=True, 
+                         shift_down=True, 
+                         shift_up=True)  # icp is called here
 
     # Cut K before running any metric
     sc.cut_k(partial_type, k_foot)
@@ -273,53 +250,43 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
     middle_x = x_series.quantile(0.025) + ((x_series.quantile(0.975) - x_series.quantile(0.025)) / 2)
     middle_y = y_series.quantile(0.025) + ((y_series.quantile(0.975) - y_series.quantile(0.025)) / 2)
 
-    if partial_type == "full":
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2, two_way=True, shift_left=True,
-                             shift_right=True, shift_down=True, shift_up=True)  # icp is called here
-    elif partial_type == "toe":
+    if partial_type == "toe":
         toe_coords = Q.coords[Q.coords.x <= middle_x]
         toe = Sole(image_path=folder_path+Q_file,
                    is_image=False, coords=toe_coords)
         pair = SolePair(toe, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_right=True)
+    
     elif partial_type == "heel":
         heel_coords = Q.coords[Q.coords.x > middle_x]
         heel = Sole(image_path=folder_path+Q_file,
                     is_image=False, coords=heel_coords)
         pair = SolePair(heel, K, mated=mated)
-        sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                             two_way=True, shift_left=True)
+        
     elif partial_type == "inside":
         if q_foot == "R":
             inside_coords = Q.coords[Q.coords.y <= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
         else:
             inside_coords = Q.coords[Q.coords.y >= middle_y]
-            inside = Sole(image_path=folder_path+Q_file,
-                          is_image=False, coords=inside_coords)
-            pair = SolePair(inside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
+        inside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=inside_coords)
+        pair = SolePair(inside, K, mated=mated)
+            
     elif partial_type == "outside":
         if q_foot == "R":
             outside_coords = Q.coords[Q.coords.y > middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(pair, icp_downsample_rate=0.2,
-                                 two_way=True, shift_down=True)
         else:
             outside_coords = Q.coords[Q.coords.y < middle_y]
-            outside = Sole(image_path=folder_path+Q_file,
-                           is_image=False, coords=outside_coords)
-            pair = SolePair(outside, K, mated=mated)
-            sc = SolePairCompare(
-                pair, icp_downsample_rate=0.2, two_way=True, shift_up=True)
+        outside = Sole(image_path=folder_path+Q_file,
+                        is_image=False, coords=outside_coords)
+        pair = SolePair(outside, K, mated=mated)
+    
+    sc = SolePairCompare(pair, 
+                         icp_downsample_rate=[0.05, 0.2, 0.5], 
+                         two_way=True, 
+                         shift_left=True,
+                         shift_right=True, 
+                         shift_down=True, 
+                         shift_up=True)  # icp is called here
 
     # Cut K before running any metric
     sc.cut_k(partial_type, k_foot)
