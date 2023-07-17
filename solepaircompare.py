@@ -19,7 +19,7 @@ class SolePairCompare:
     def __init__(self,
                  pair: SolePair,
                  downsample_rate=1.0,
-                 icp_downsample_rate=1.0,
+                 icp_downsample_rates=[1.0],
                  random_seed=47,
                  shift_left=False,
                  shift_right=False,
@@ -32,26 +32,49 @@ class SolePairCompare:
             Q: (Pandas DataFrame) for shoe Q
             K: (Pandas DataFrame) for shoe K
         '''
+            
+        best_icp_downsample_rate = None
+        best_percent_overlap = -1
 
-        self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
-                                                          shift_left=shift_left,
-                                                          shift_right=shift_right,
-                                                          shift_up=shift_up,
-                                                          shift_down=shift_down,
-                                                          two_way=two_way,
-                                                          overlap_threshold=icp_overlap_threshold)
+        for icp_downsample_rate in icp_downsample_rates:
+            # pair.icp_transform sets self._aligned, self._T, and self.K.aligned_coordinates in place
+            self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
+                                                                shift_left=shift_left,
+                                                                shift_right=shift_right,
+                                                                shift_up=shift_up,
+                                                                shift_down=shift_down,
+                                                                two_way=two_way,
+                                                                overlap_threshold=icp_overlap_threshold)
 
-        self._Q_coords = self._Q_coords.sample(frac=downsample_rate,
-                                             random_state=random_seed)
+            self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
+            self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
+            
+            # Check the percent overlap of this icp_downsample_rate
+            po = self.percent_overlap()
 
-        self._K_coords = self._K_coords.sample(frac=downsample_rate,
-                                             random_state=random_seed)
+            # higher the better
+            if po > best_percent_overlap:
+                best_percent_overlap = po
+                best_icp_downsample_rate = icp_downsample_rate
+
+        # Short circuit: if there the best_icp_downsample_rate equals the last
+        # element in icp_downsample_rates, then we don't need to run the ICP 
+        # again to update pair.T in place.
+        if icp_downsample_rates[-1] != best_icp_downsample_rate:
+            self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=best_icp_downsample_rate,
+                                                                shift_left=shift_left,
+                                                                shift_right=shift_right,
+                                                                shift_up=shift_up,
+                                                                shift_down=shift_down,
+                                                                two_way=two_way,
+                                                                overlap_threshold=icp_overlap_threshold)
+
+            self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
+            self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
 
         # The percent of original K that is keeping
         self.K_keep_percent = 1.0
-
         self.pair = pair
-
         self.random_seed = random_seed
     
     @property
