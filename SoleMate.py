@@ -83,10 +83,10 @@ def main():
             K_file = "example_shoeprints/nonmated_2_k.tiff"
             q_border_width = 160
             k_border_width = 160
-
-        # Select border-width
-        q_border_width = st.number_input("Select Q border width:", 0, 300, 0)
-        k_border_width = st.number_input("Select K border width:", 0, 300, 0)
+        elif pair == 'None':
+            # Select border-width
+            q_border_width = st.number_input("Select Q border width:", 0, 300, 0)
+            k_border_width = st.number_input("Select K border width:", 0, 300, 0)
 
     col1, col2 = st.columns([1, 1.5])
     with col1:
