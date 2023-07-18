@@ -546,7 +546,7 @@ def main():
 
 # Run the app
 if __name__ == "__main__":
-    st.set_page_config(layout="wide")
+    st.set_page_config(page_title='SoleMate', page_icon = 'logo.png', layout='wide')
     css = '''
     <style>
         .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
