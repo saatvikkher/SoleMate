@@ -102,8 +102,8 @@ def main():
     # Summary
     st.header("Welcome!")
     st.markdown("*SoleMate* is a tool for determining whether or not footwear outsole impressions match. Our algorithm offers a fast\
-                and robust method to match the *K* shoeprint (the known shoeprint of a suspect)\
-                to a *Q* shoeprint (the questioned shoeprint found at the crime scene). We use Iterative\
+                and robust method to match the known shoeprint of a suspect (K)\
+                to a questioned shoeprint found at the crime scene (Q). We use Iterative\
                 Closest Point (ICP), a point cloud registration algorithm, to find the best affine transformation\
                 to align two shoeprints. We then calculate metrics and compare them to training data.\
                 Using these metrics in a random forest model, we then identify the selected\
@@ -114,7 +114,7 @@ def main():
                 of the border in pixels. Click the \"Run SoleMate\" button to\
                 run the algorithm and see the results!")
     
-    with st.expander(":book: Introduction to shoeprint pattern matching"):
+    with st.expander(":athletic_shoe: Introduction to shoeprint pattern matching"):
                 st.subheader("Shoeprint Pattern Matching")
                 st.markdown("Footwear outsole impressions (shoeprints) are often\
                             found at the scene of a crime and consist of the\
@@ -143,7 +143,7 @@ def main():
                             allowing us to quantify the degree of similarity\
                             between two shoeprints.")
     if Q_file and K_file:
-        if st.sidebar.button("Run SoleMate"):
+        if st.sidebar.button("Run SoleMate", type='primary'):
             st.divider()
             # Check if both images are uploaded
             if Q_file and K_file:
