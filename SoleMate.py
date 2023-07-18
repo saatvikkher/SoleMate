@@ -443,11 +443,11 @@ def main():
                                     the entire print, the root mean squared of the\
                                     distances between the centroids of clusters in Q\
                                     and the corresponding updated centroids of the\
-                                    clusters in K, the difference between the within\
-                                    cluster variation in Q and K scaled by the within\
-                                    cluster variation in Q, and the number of\
+                                    clusters in K, the difference between the within-cluster\
+                                    variation in Q and K scaled by the within-cluster\
+                                    variation in Q, and the number of\
                                     iterations k-means clustering took to find clusters\
-                                    in K. For each of the clustering metrics,\
+                                    in K. For each of the clustering metrics (except within-cluster variation),\
                                     smaller magnitudes are indicative of mated pairs.")
 
                 st.divider()
