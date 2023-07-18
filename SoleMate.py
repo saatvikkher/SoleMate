@@ -12,15 +12,14 @@ import matplotlib.pyplot as plt
 from util import WILLIAMS_GOLD, WILLIAMS_PURPLE
 import pickle
 
-
+@st.cache_data
 def load_train():
-    train = pd.read_csv("old_results/0711/result_train_0711.csv")
-    return train
+    return pd.read_csv("old_results/0711/result_train_0711.csv")
 
-
+@st.cache_resource
 def load_model():
-    full_model = pickle.load(open('full.pkl', 'rb'))
-    return full_model
+    with open('full.pkl', 'rb') as p:
+        return pickle.load(p)
 
 
 def plot_pre(Q_down, K_down):
@@ -143,7 +142,7 @@ def main():
                             reducing the possibility for human error and\
                             allowing us to quantify the degree of similarity\
                             between two shoeprints.")
-    if Q_file != None and K_file != None:
+    if Q_file and K_file:
         if st.sidebar.button("Run SoleMate"):
             st.divider()
             # Check if both images are uploaded
