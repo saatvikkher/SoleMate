@@ -62,7 +62,7 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.75], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
@@ -172,7 +172,7 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.75], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
@@ -281,7 +281,7 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.75], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
