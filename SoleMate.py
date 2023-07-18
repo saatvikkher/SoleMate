@@ -210,8 +210,10 @@ def main():
 
 
                     st.header("Metrics")
-                    st.markdown(
-                        "We quantify similarity using a number of metrics.")
+                    st.markdown("We quantify similarity between shoeprints\
+                                using a number of metrics. The dotted line\
+                                represents where in the distribution the metric\
+                                computed from the input shoeprint pair lies.")
 
                     # Overlap
                     st.subheader("Overlap")
@@ -222,10 +224,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="q_pct", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=new_q_pct, color='#BD783A',
+                        plt.axvline(x=new_q_pct, color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Q Percent Overlap")
                         st.pyplot(q_pct)
                     with col2:
@@ -233,10 +235,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="k_pct", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=new_k_pct, color='#BD783A',
+                        plt.axvline(x=new_k_pct, color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("K Percent Overlap")
                         st.pyplot(k_pct)
 
@@ -258,10 +260,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="mean", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['mean'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['mean'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Mean CP Distance")
                         st.pyplot(mean)
                     with col2:
@@ -269,10 +271,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="std", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['std'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['std'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Standard Deviation CP Distance")
                         st.pyplot(std)
 
@@ -282,10 +284,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="0.1", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['0.1'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['0.1'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("10th Percentile CP Distance")
                         st.pyplot(p10)
                     with col2:
@@ -293,10 +295,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="0.25", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['0.25'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['0.25'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("25th Percentile CP Distance")
                         st.pyplot(p25)
 
@@ -306,10 +308,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="0.5", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['0.5'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['0.5'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Median CP Distance")
                         st.pyplot(p50)
                     with col2:
@@ -317,10 +319,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="0.75", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['0.75'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['0.75'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("75th Percentile CP Distance")
                         st.pyplot(p75)
 
@@ -330,10 +332,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="0.9", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=dist_metrics['0.9'], color='#BD783A',
+                        plt.axvline(x=dist_metrics['0.9'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("90th Percentile CP Distance")
                         st.pyplot(p90)
 
@@ -359,10 +361,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="centroid_distance", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=cluster_metrics['centroid_distance'], color='#BD783A',
+                        plt.axvline(x=cluster_metrics['centroid_distance'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['centroid_distance'], -0.001, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Centroid Distance")
                         st.pyplot(centroid_distance)
                     with col2:
@@ -370,10 +372,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="cluster_proprtion", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=cluster_metrics['cluster_proprtion'], color='#BD783A',
+                        plt.axvline(x=cluster_metrics['cluster_proprtion'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['cluster_proprtion'], -5, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Cluster Proportion")
                         st.pyplot(cluster_proprtion)
 
@@ -383,10 +385,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="iterations_k", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=cluster_metrics['iterations_k'], color='#BD783A',
+                        plt.axvline(x=cluster_metrics['iterations_k'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['iterations_k'], -0.004, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Iterations K")
                         st.pyplot(iterations_k)
                     with col2:
@@ -394,10 +396,10 @@ def main():
                         sns.kdeplot(data=load_train(), x="wcv", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
                                     )
-                        plt.axvline(x=cluster_metrics['wcv'], color='#BD783A',
+                        plt.axvline(x=cluster_metrics['wcv'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['wcv'], -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#BD783A")
+                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Within Cluster Variation")
                         st.pyplot(wcv)
 
