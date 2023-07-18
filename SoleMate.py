@@ -12,9 +12,11 @@ import matplotlib.pyplot as plt
 from util import WILLIAMS_GOLD, WILLIAMS_PURPLE
 import pickle
 
+
 @st.cache_data
 def load_train():
     return pd.read_csv("old_results/0711/result_train_0711.csv")
+
 
 @st.cache_resource
 def load_model():
@@ -54,9 +56,11 @@ def main():
     # Sidebar
     with st.sidebar:
         # Upload images and select border widths
-        Q_file = st.file_uploader("Upload shoeprint Q", type=["png", "jpg", "tiff"])
+        Q_file = st.file_uploader("Upload shoeprint Q", type=[
+                                  "png", "jpg", "tiff"])
         q_border_width = st.number_input("Select Q border width:", 0, 300, 0)
-        K_file = st.file_uploader("Upload shoeprint K", type=["png", "jpg", "tiff"])
+        K_file = st.file_uploader("Upload shoeprint K", type=[
+                                  "png", "jpg", "tiff"])
         k_border_width = st.number_input("Select K border width:", 0, 300, 0)
 
         # Use example pair
@@ -64,26 +68,26 @@ def main():
         st.markdown("**OR**")
 
         pair = st.selectbox('Use a preset example pair:',
-                                ('None', 'Mated Pair #1', 'Mated Pair #2', 
-                                'Non-Mated Pair #1', 'Non-Mated Pair #2'))
+                            ('None', 'Mated Pair #1', 'Mated Pair #2',
+                             'Non-Mated Pair #1', 'Non-Mated Pair #2'))
         if pair == 'Mated Pair #1':
-            Q_file = "example_shoeprints/mated_1_q.tiff"
-            K_file = "example_shoeprints/mated_1_k.tiff"
-            q_border_width = 160
-            k_border_width = 160
-        elif pair == 'Mated Pair #2':
             Q_file = "example_shoeprints/mated_2_q.tiff"
             K_file = "example_shoeprints/mated_2_k.tiff"
             q_border_width = 160
             k_border_width = 160
+        elif pair == 'Mated Pair #2':
+            Q_file = "example_shoeprints/mated_1_q.tiff"
+            K_file = "example_shoeprints/mated_1_k.tiff"
+            q_border_width = 160
+            k_border_width = 160
         elif pair == 'Non-Mated Pair #1':
-            Q_file = "example_shoeprints/nonmated_1_q.tiff"
-            K_file = "example_shoeprints/nonmated_1_k.tiff"
+            Q_file = "example_shoeprints/nonmated_2_q.tiff"
+            K_file = "example_shoeprints/nonmated_2_k.tiff"
             q_border_width = 160
             k_border_width = 160
         elif pair == 'Non-Mated Pair #2':
-            Q_file = "example_shoeprints/nonmated_2_q.tiff"
-            K_file = "example_shoeprints/nonmated_2_k.tiff"
+            Q_file = "example_shoeprints/nonmated_1_q.tiff"
+            K_file = "example_shoeprints/nonmated_1_k.tiff"
             q_border_width = 160
             k_border_width = 160
 
@@ -113,10 +117,10 @@ def main():
                 uploaded images come with a frame or ruler, designate the width\
                 of the border in pixels. Click the \"Run SoleMate\" button to\
                 run the algorithm and see the results!")
-    
+
     with st.expander(":athletic_shoe: Introduction to shoeprint pattern matching"):
-                st.subheader("Shoeprint Pattern Matching")
-                st.markdown("Footwear outsole impressions (shoeprints) are often\
+        st.subheader("Shoeprint Pattern Matching")
+        st.markdown("Footwear outsole impressions (shoeprints) are often\
                             found at the scene of a crime and consist of the\
                             marks on a surface created when the materials picked\
                             up by a shoe (e.g., dirt, paint, blood) make contact\
@@ -124,7 +128,7 @@ def main():
                             in connecting an individual to their presence at the\
                             scene of a crime should a known shoe be judged to\
                             match a crime scene print.")
-                st.markdown("Characteristics of shoeprints can be broken down\
+        st.markdown("Characteristics of shoeprints can be broken down\
                             into three categories. Class characteristics include\
                             the size, brand, make, and model of a shoe. Subclass\
                             characteristics consist of smaller differences in\
@@ -133,7 +137,7 @@ def main():
                             outsole caused by wear and tear. These\
                             characteristics are known as randomly acquired\
                             characteristics (RACs).")
-                st.markdown("Proving that two shoeprints were made by the same\
+        st.markdown("Proving that two shoeprints were made by the same\
                             shoe requires that their RACs match. It can be\
                             extremely difficult to detect such small\
                             differences in outsole impressions, even for a\
@@ -157,7 +161,7 @@ def main():
                     "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
                 with st.spinner("Aligning soles..."):
                     sc = SolePairCompare(pair, icp_downsample_rates=[0.05], two_way=True, shift_left=True,
-                                        shift_right=True, shift_down=True, shift_up=True)
+                                         shift_right=True, shift_down=True, shift_up=True)
                 K_down = K.coords.sample(frac=0.1)
                 K_al_down = K.aligned_coordinates.sample(frac=0.1)
                 Q_down = Q.coords.sample(frac=0.1)
@@ -208,7 +212,6 @@ def main():
                     cluster_metrics['iterations_k'] = all_cluster_metrics['iterations_k_n_clusters_20']
                     cluster_metrics['wcv'] = all_cluster_metrics['wcv_ratio_n_clusters_20']
 
-
                     st.header("Metrics")
                     st.markdown("We quantify similarity between shoeprints\
                                 using a number of metrics. The dotted line\
@@ -227,7 +230,7 @@ def main():
                         plt.axvline(x=new_q_pct, color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(new_q_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Q Percent Overlap")
                         st.pyplot(q_pct)
                     with col2:
@@ -238,7 +241,7 @@ def main():
                         plt.axvline(x=new_k_pct, color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(new_k_pct, -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("K Percent Overlap")
                         st.pyplot(k_pct)
 
@@ -263,9 +266,9 @@ def main():
                         plt.axvline(x=dist_metrics['mean'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Mean CP Distance")
-                        plt.xlim((-5,50))
+                        plt.xlim((-5, 50))
                         st.pyplot(mean)
                     with col2:
                         std = plt.figure(figsize=(10, 7))
@@ -275,9 +278,9 @@ def main():
                         plt.axvline(x=dist_metrics['std'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Standard Deviation CP Distance")
-                        plt.xlim((-5,50))
+                        plt.xlim((-5, 50))
                         st.pyplot(std)
 
                     col1, col2 = st.columns(2)
@@ -289,9 +292,9 @@ def main():
                         plt.axvline(x=dist_metrics['0.1'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("10th Percentile CP Distance")
-                        plt.xlim((-0.25,3))
+                        plt.xlim((-0.25, 3))
                         st.pyplot(p10)
                     with col2:
                         p25 = plt.figure(figsize=(10, 7))
@@ -301,9 +304,9 @@ def main():
                         plt.axvline(x=dist_metrics['0.25'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("25th Percentile CP Distance")
-                        plt.xlim((-0.5,10))
+                        plt.xlim((-0.5, 10))
                         st.pyplot(p25)
 
                     col1, col2 = st.columns(2)
@@ -315,9 +318,9 @@ def main():
                         plt.axvline(x=dist_metrics['0.5'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Median CP Distance")
-                        plt.xlim((-2,30))
+                        plt.xlim((-2, 30))
                         st.pyplot(p50)
                     with col2:
                         p75 = plt.figure(figsize=(10, 7))
@@ -327,9 +330,9 @@ def main():
                         plt.axvline(x=dist_metrics['0.75'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("75th Percentile CP Distance")
-                        plt.xlim((-5,70))
+                        plt.xlim((-5, 70))
                         st.pyplot(p75)
 
                     __, col2, __ = st.columns([1, 2, 1])
@@ -341,9 +344,9 @@ def main():
                         plt.axvline(x=dist_metrics['0.9'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("90th Percentile CP Distance")
-                        plt.xlim((-10,150))
+                        plt.xlim((-10, 150))
                         st.pyplot(p90)
 
                     with st.expander(":bar_chart: About the metric: Closest Point Distances"):
@@ -371,9 +374,9 @@ def main():
                         plt.axvline(x=cluster_metrics['centroid_distance'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['centroid_distance'], -0.001, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Centroid Distance")
-                        plt.xlim((-50,600))
+                        plt.xlim((-50, 600))
                         st.pyplot(centroid_distance)
                     with col2:
                         cluster_proprtion = plt.figure(figsize=(10, 7))
@@ -383,7 +386,7 @@ def main():
                         plt.axvline(x=cluster_metrics['cluster_proprtion'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['cluster_proprtion'], -5, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Cluster Proportion")
                         st.pyplot(cluster_proprtion)
 
@@ -396,7 +399,7 @@ def main():
                         plt.axvline(x=cluster_metrics['iterations_k'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['iterations_k'], -0.004, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Iterations K")
                         st.pyplot(iterations_k)
                     with col2:
@@ -407,9 +410,9 @@ def main():
                         plt.axvline(x=cluster_metrics['wcv'], color='#C86914',
                                     linestyle='--', linewidth=3)
                         plt.text(cluster_metrics['wcv'], -0.25, 'Test Pair', verticalalignment='bottom',
-                                horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Within Cluster Variation")
-                        plt.xlim((-2,0.5))
+                        plt.xlim((-2, 0.5))
                         st.pyplot(wcv)
 
                     with st.expander(":bar_chart: About the metric: Clustering"):
@@ -459,21 +462,22 @@ def main():
 
                 # Creating a Dataframe row containing the new metrics
                 row = {'q_pct': new_q_pct,
-                    'k_pct': new_k_pct}
+                       'k_pct': new_k_pct}
                 row.update(dist_metrics)
                 row.update(cluster_metrics)
                 row = pd.DataFrame(row, index=[0])
-                
+
                 # Loading cached model
                 rf_model = load_model()
                 # Subsetting relevant features
                 row = row[list(rf_model.feature_names_in_)].round(2)
                 # Indexing into rf probability for class=1 i.e. mated=True
                 score = rf_model.predict_proba(row)[0][1]
-                
+
                 prob = round(score, 2)
                 mated = "Mated" if score > 0.5 else "Non-Mated"
-                st.success(f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
+                st.success(
+                    f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
                 st.markdown("A summary of all the metrics we calculated:")
                 st.dataframe(row)
                 st.markdown(f"RF posterior probability: **{prob}**")
@@ -495,8 +499,8 @@ def main():
                                 and the model will assess based on this training the \
                                 probability that the input pair is mated or \
                                 non-mated.")
-                    
-                with st.expander(":technologist: Our random forest implentation"):
+
+                with st.expander(":technologist: Our random forest implementation"):
                     st.subheader("Our Random Forest Implementation")
                     st.markdown("We trained our random forest on data from \
                                 [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).\
@@ -508,8 +512,27 @@ def main():
                                 acquired characteristics. We trained our random\
                                 forest on 70\% of these data and tested it with the\
                                 remaining completely independent 30\% (i.e., no\
-                                image appears in both the training and test set).")
-    
+                                image appears in both the training and test set).\
+                                See the variable importance of the random forest\
+                                model below.")
+                    # Variable importance plot for random forest
+                    rf_model = load_model()
+                    importances = rf_model.feature_importances_
+                    feature_names = ['distance '+metric if metric in ['0.1', '0.25', '0.5', '0.75',
+                                                                      '0.9', 'mean', 'std'] else metric for metric in rf_model.feature_names_in_]
+                    feature_importances = pd.DataFrame(
+                        {'Feature': feature_names, 'Importance': importances})
+                    feature_importances = feature_importances.sort_values(
+                        'Importance', ascending=True)
+                    plt.figure(figsize=(15, 13))
+                    fig = px.bar(feature_importances, x='Importance',
+                                 y='Feature', orientation='h', color='Importance', color_continuous_scale=["#B1008E", "#500082"],
+                                 width=1200,
+                                 height=600)
+                    fig.update_layout(yaxis=dict(tickfont=dict(size=15)))
+                    fig.update(layout_coloraxis_showscale=False)
+                    st.plotly_chart(fig)
+
     st.divider()
     st.markdown(
         "*Disclaimer: This tool should be used for research and education purposes only.*")
@@ -523,7 +546,7 @@ def main():
 
 # Run the app
 if __name__ == "__main__":
-    st.set_page_config(layout="wide")
+    st.set_page_config(page_title='SoleMate', page_icon = 'logo.png', layout='wide')
     css = '''
     <style>
         .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
