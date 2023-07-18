@@ -265,6 +265,7 @@ def main():
                         plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Mean CP Distance")
+                        plt.xlim((-5,50))
                         st.pyplot(mean)
                     with col2:
                         std = plt.figure(figsize=(10, 7))
@@ -276,6 +277,7 @@ def main():
                         plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Standard Deviation CP Distance")
+                        plt.xlim((-5,50))
                         st.pyplot(std)
 
                     col1, col2 = st.columns(2)
@@ -289,6 +291,7 @@ def main():
                         plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("10th Percentile CP Distance")
+                        plt.xlim((-0.25,3))
                         st.pyplot(p10)
                     with col2:
                         p25 = plt.figure(figsize=(10, 7))
@@ -300,6 +303,7 @@ def main():
                         plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("25th Percentile CP Distance")
+                        plt.xlim((-0.5,10))
                         st.pyplot(p25)
 
                     col1, col2 = st.columns(2)
@@ -313,6 +317,7 @@ def main():
                         plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Median CP Distance")
+                        plt.xlim((-2,30))
                         st.pyplot(p50)
                     with col2:
                         p75 = plt.figure(figsize=(10, 7))
@@ -324,6 +329,7 @@ def main():
                         plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("75th Percentile CP Distance")
+                        plt.xlim((-5,70))
                         st.pyplot(p75)
 
                     __, col2, __ = st.columns([1, 2, 1])
@@ -337,6 +343,7 @@ def main():
                         plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("90th Percentile CP Distance")
+                        plt.xlim((-10,150))
                         st.pyplot(p90)
 
                     with st.expander(":bar_chart: About the metric: Closest Point Distances"):
@@ -366,6 +373,7 @@ def main():
                         plt.text(cluster_metrics['centroid_distance'], -0.001, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Centroid Distance")
+                        plt.xlim((-50,600))
                         st.pyplot(centroid_distance)
                     with col2:
                         cluster_proprtion = plt.figure(figsize=(10, 7))
@@ -401,6 +409,7 @@ def main():
                         plt.text(cluster_metrics['wcv'], -0.25, 'Test Pair', verticalalignment='bottom',
                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Within Cluster Variation")
+                        plt.xlim((-2,0.5))
                         st.pyplot(wcv)
 
                     with st.expander(":bar_chart: About the metric: Clustering"):
@@ -438,7 +447,8 @@ def main():
                                     cluster variation in Q and K scaled by the within\
                                     cluster variation in Q, and the number of\
                                     iterations k-means clustering took to find clusters\
-                                    in K.")
+                                    in K. For each of the clustering metrics,\
+                                    smaller magnitudes are indicative of mated pairs.")
 
                 st.divider()
 
