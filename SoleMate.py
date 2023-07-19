@@ -450,7 +450,7 @@ def main():
                                     variation in Q and K scaled by the within-cluster\
                                     variation in Q, and the number of\
                                     iterations k-means clustering took to find clusters\
-                                    in K. For each of the clustering metrics (except within-cluster variation),\
+                                    in K. For each of the clustering metrics,\
                                     smaller magnitudes are indicative of mated pairs.")
 
                 st.divider()
