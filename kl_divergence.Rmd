@@ -55,6 +55,19 @@ kldivergence <- function(df1, df2){
 ```
 
 ```{r}
+overlap_proportion <- function(df1, df2){
+  df1_den <- density(df1, from = min(df1), to = max(df1))
+  df2_den <- density(df2, from = min(df2), to = max(df2))
+ 
+  joint <- pmin(df1_den$y, df2_den$y)
+  
+  overlap <- sum(joint) / sum(df1_den$y, df2_den$y)
+  
+  return(overlap)
+}
+```
+
+```{r}
 
 mated <- result_baseline_train %>%
   filter(mated) %>%
@@ -75,6 +88,44 @@ print(kldivergence(mated, nonmated))
 kld <- kldivergence(mated, nonmated)
 # kldivergence(nonmated, mated)
 # ks.test(mated, nonmated)
+```
+
+```{r}
+folderpath <- "/Users/lena2/Desktop/SMALL-stat/SoleMate/Jul14_results"
+
+filenames <- list.files(folderpath)
+
+for (filename in filenames){
+  file <- read_csv(paste0(folderpath, "/", filename), show_col_types = FALSE)
+  cols <-colnames(file)
+  
+  df <- data.frame()
+  for (col in cols[15:52]){
+    # print(col)
+    mated <- file %>%
+      filter(mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+
+    nonmated <- file %>%
+      filter(!mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+
+    kld1 <- unname(kldivergence(mated, nonmated))
+    kld2 <- unname(kldivergence(nonmated, mated))
+    kst <- unname(ks.test(nonmated, mated)[[1]])
+    overlap <- overlap_proportion(mated, nonmated)
+    overlap2 <- overlap_proportion(nonmated, mated)
+    df <- bind_rows(df, as.tibble(col, kld1, kld2, kst, overlap, overlap2))
+  }
+  # print("DONE WITH ITERATION")
+  # write_csv(df, paste0("STATS_", filename))
+  print(df)
+}
+
 ```
 
 ```{r}
@@ -113,9 +164,6 @@ for (filename in filenames){
 
 ```
 
-```{r}
-
-```
 
 
 
