@@ -58,10 +58,10 @@ def main():
         # Upload images and select border widths
         Q_file = st.file_uploader("Upload shoeprint Q", type=[
                                   "png", "jpg", "tiff"])
-        q_border_width = st.number_input("Select Q border width:", 0, 300, 0)
+        q_border_width = st.number_input("Select Q border width (pixels):", 0, 300, 0)
         K_file = st.file_uploader("Upload shoeprint K", type=[
                                   "png", "jpg", "tiff"])
-        k_border_width = st.number_input("Select K border width:", 0, 300, 0)
+        k_border_width = st.number_input("Select K border width (pixels):", 0, 300, 0)
 
         # Use example pair
         st.divider()
@@ -450,7 +450,7 @@ def main():
                                     variation in Q and K scaled by the within-cluster\
                                     variation in Q, and the number of\
                                     iterations k-means clustering took to find clusters\
-                                    in K. For each of the clustering metrics (except within-cluster variation),\
+                                    in K. For each of the clustering metrics,\
                                     smaller magnitudes are indicative of mated pairs.")
 
                 st.divider()
