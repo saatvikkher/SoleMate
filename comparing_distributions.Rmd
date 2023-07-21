@@ -18,6 +18,7 @@ library(glue)
 library(ggplot2)
 library(dgof)
 library(FNN)
+library(sfsmisc)
 ```
 
 ```{r}
@@ -50,18 +51,25 @@ kldivergence <- function(df1, df2){
     distr <- rbind(p_df1, p_df2)
     kld <- KL(distr, unit='log')
     
-    # return(kld)
+    return(kld)
 }
 ```
 
 ```{r}
 overlap_proportion <- function(df1, df2){
-  df1_den <- density(df1, from = min(df1), to = max(df1))
-  df2_den <- density(df2, from = min(df2), to = max(df2))
- 
-  joint <- pmin(df1_den$y, df2_den$y)
+  lower <- min(c(df1, df2)) - 1 
+  upper <- max(c(df1, df2)) + 1
   
-  overlap <- sum(joint) / sum(df1_den$y, df2_den$y)
+  d1 <- density(df1, from=lower, to=upper)
+  d2 <- density(df2, from=lower, to=upper)
+  d <- data.frame(x=d1$x, a=d1$y, b=d2$y)
+  
+  d$w <- pmin(d$a, d$b)
+
+  total <- integrate.xy(d$x, d$a) + integrate.xy(d$x, d$b)
+  intersection <- integrate.xy(d$x, d$w)
+  
+  overlap <- (2*intersection) / total
   
   return(overlap)
 }
@@ -85,7 +93,7 @@ nonmated <- result_baseline_train %>%
 print(kldivergence(mated, nonmated))
 
 kld <- kldivergence(mated, nonmated)
-# kldivergence(nonmated, mated)
+kldivergence(nonmated, mated)
 # ks.test(mated, nonmated)
 ```
 
