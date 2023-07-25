@@ -43,12 +43,12 @@ class SolePairCompare:
         for icp_downsample_rate in icp_downsample_rates:
             # pair.icp_transform sets self._aligned, self._T, and self.K.aligned_coordinates in place
             self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=icp_downsample_rate,
-                                                                shift_left=shift_left,
-                                                                shift_right=shift_right,
-                                                                shift_up=shift_up,
-                                                                shift_down=shift_down,
-                                                                two_way=two_way,
-                                                                overlap_threshold=icp_overlap_threshold)
+                                                                                                         shift_left=shift_left,
+                                                                                                         shift_right=shift_right,
+                                                                                                         shift_up=shift_up,
+                                                                                                         shift_down=shift_down,
+                                                                                                         two_way=two_way,
+                                                                                                         overlap_threshold=icp_overlap_threshold)
 
             self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
             self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
@@ -66,12 +66,12 @@ class SolePairCompare:
         # again to update pair.T in place.
         if icp_downsample_rates[-1] != best_icp_downsample_rate:
             self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=best_icp_downsample_rate,
-                                                                shift_left=shift_left,
-                                                                shift_right=shift_right,
-                                                                shift_up=shift_up,
-                                                                shift_down=shift_down,
-                                                                two_way=two_way,
-                                                                overlap_threshold=icp_overlap_threshold)
+                                                                                                        shift_left=shift_left,
+                                                                                                        shift_right=shift_right,
+                                                                                                        shift_up=shift_up,
+                                                                                                        shift_down=shift_down,
+                                                                                                        two_way=two_way,
+                                                                                                        overlap_threshold=icp_overlap_threshold)
 
             self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
             self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
@@ -200,8 +200,7 @@ class SolePairCompare:
         kdtree closest neighbor algorithm. 
 
         It outputs distribution statistics including the average, 
-        standard deviation, and 0.1, 0.25, 0.5, 0.75, 0.9 quantile values, as well as
-        kurtosis.
+        standard deviation, and 0.1, 0.25, 0.5, 0.75, 0.9 quantile values.
 
         Inputs:
             Q_as_base (bool): if Q is the base dataframe, defaults to True
@@ -239,7 +238,7 @@ class SolePairCompare:
         min_dists_dict["0.5"] = np.quantile(min_dists_arr, 0.5)
         min_dists_dict["0.75"] = np.quantile(min_dists_arr, 0.75)
         min_dists_dict["0.9"] = np.quantile(min_dists_arr, 0.9)
-        min_dists_dict["kurtosis"] = kurtosis(min_dists_arr)
+        # min_dists_dict["kurtosis"] = kurtosis(min_dists_arr)
 
         return min_dists_dict
 
