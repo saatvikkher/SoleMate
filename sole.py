@@ -39,12 +39,14 @@ class Sole:
 
         if is_image:
             # original coordinates field, set using read image edge detection helper method
-            self._coords = self._image_to_coords(image_path, border_width)
+            self._coords, self._coords_full = self._image_to_coords(image_path, border_width)
         else:
             self._coords = coords
+            self._coords_full = coords
 
         if flipped:
-            self.coords = self.flip_coords()
+            self._coords = self.flip_coords(self._coords)
+            self._coords_full = self.flip_coords(self._coords_full)
 
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
@@ -123,6 +125,19 @@ class Sole:
             print("Must be a pandas DataFrame:", str(e))
 
     @property
+    def aligned_full(self) -> pd.DataFrame:
+        '''Getter method for dataframe of aligned shoeprint coordinates'''
+        return self._aligned_full
+
+    @aligned_full.setter
+    def aligned_full(self, value) -> None:
+        '''Setter method for dataframe of aligned shoeprint coordinates'''
+        try:
+            self._aligned_full = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
+
+    @property
     def coords(self) -> pd.DataFrame:
         '''Getter method for dataframe of original shoeprint coordinates'''
         return self._coords
@@ -132,6 +147,19 @@ class Sole:
         '''Setter method for dataframe of coordinates'''
         try:
             self._coords = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
+
+    @property
+    def coords_full(self) -> pd.DataFrame:
+        '''Getter method for dataframe of original shoeprint coordinates'''
+        return self._coords_full
+
+    @coords_full.setter
+    def coords_full(self, value) -> None:
+        '''Setter method for dataframe of coordinates'''
+        try:
+            self._coords_full = value
         except Exception as e:
             print("Must be a pandas DataFrame:", str(e))
 
@@ -164,6 +192,7 @@ class Sole:
         # open image and convert to a grayscale numpy array
         img = Image.open(link)
         img = img.convert("L")
+        img_full = img.convert("L")
 
         # edge detection
         img = img.filter(ImageFilter.FIND_EDGES)
@@ -176,13 +205,21 @@ class Sole:
         crop = inv.crop((border_width, border_width, image_width-border_width,
                          image_height-border_width))
         crop_arr = np.array(crop)
+        
+        # extract image dimensions and crop image for the non-edge-detection shoe
+        crop_full = img_full.crop((border_width, border_width, image_width-border_width,
+                 image_height-border_width))
+        crop_arr_full = np.array(crop_full)
 
         # change from grayscale to binary black/white to create coordinates df
         crop_arr = crop_arr < BLACK_WHITE_THRESHOLD
+        crop_arr_full = crop_arr_full < BLACK_WHITE_THRESHOLD
         rows, cols = np.where(crop_arr)
+        rows_full, cols_full = np.where(crop_arr_full)
         df = pd.DataFrame({"x": rows, "y": cols})
+        df_full = pd.DataFrame({"x": rows_full, "y": cols_full})
 
-        return df
+        return df, df_full
 
     def plot(self, color=WILLIAMS_PURPLE, size: float = 0.5):
         '''
@@ -204,18 +241,12 @@ class Sole:
 
         plt.show()
 
-    def flip_coords(self):
+    def _flip_coords(self, coords):
         '''
         Flips the coordinates of a shoe along the x-axis.
-
-        Inputs:
-            None
-
-        Returns:
-            None
         '''
-        temp_coords = self.coords.copy(deep=True)
-        max_y = max(self.coords['y'])
+        temp_coords = coords.copy(deep=True)
+        max_y = max(coords['y'])
         temp_coords['y'] = temp_coords['y']*-1 + max_y
         return temp_coords
         # self.coords = temp_coords

@@ -42,7 +42,7 @@ class SolePairCompare:
 
         for icp_downsample_rate in icp_downsample_rates:
             # pair.icp_transform sets self._aligned, self._T, and self.K.aligned_coordinates in place
-            self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=icp_downsample_rate,
+            self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=icp_downsample_rate,
                                                                 shift_left=shift_left,
                                                                 shift_right=shift_right,
                                                                 shift_up=shift_up,
@@ -65,7 +65,7 @@ class SolePairCompare:
         # element in icp_downsample_rates, then we don't need to run the ICP 
         # again to update pair.T in place.
         if icp_downsample_rates[-1] != best_icp_downsample_rate:
-            self._Q_coords, self._K_coords = pair.icp_transform(downsample_rate=best_icp_downsample_rate,
+            self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=best_icp_downsample_rate,
                                                                 shift_left=shift_left,
                                                                 shift_right=shift_right,
                                                                 shift_up=shift_up,
@@ -88,6 +88,14 @@ class SolePairCompare:
     @property
     def K_coords(self) -> pd.DataFrame:
         return self._K_coords
+
+    @property
+    def Q_coords_full(self) -> pd.DataFrame:
+        return self._Q_coords_full
+
+    @property
+    def K_coords_full(self) -> pd.DataFrame:
+        return self._K_coords_full
     
     @Q_coords.setter
     def Q_coords(self, value) -> None:
@@ -98,6 +106,16 @@ class SolePairCompare:
     def K_coords(self, value) -> None:
         '''Setter method for K dataframe of coordinates'''
         self._K_coords = value
+
+    @Q_coords.setter
+    def Q_coords_full(self, value) -> None:
+        '''Setter method for Q dataframe of coordinates'''
+        self._Q_coords_full = value
+    
+    @K_coords.setter
+    def K_coords_full(self, value) -> None:
+        '''Setter method for K dataframe of coordinates'''
+        self._K_coords_full = value
 
     def _df_to_hash(self, df):
         '''
@@ -436,7 +454,7 @@ class SolePairCompare:
         max_x_int = int(math.ceil(max_x))
         max_y_int = int(math.ceil(max_y))
         image = np.zeros((max_y_int + 1, max_x_int + 1))  # Dimensions based on max x and y coordinates
-        image[df['y'].astype(int), df['x'].astype(int)] = 255  # Set the points to 255 (white) for visualization
+        image[df['y'].round().astype(int), df['x'].round().astype(int)] = 255  # Set the points to 255 (white) for visualization
         return image
 
     def _phase_only_correlation(self, image1, image2):
@@ -523,11 +541,11 @@ class SolePairCompare:
         Returns:
             (dict): a dictionary object containing all the pc metrics
         '''
-        max_x = max(self.Q_coords['x'].max(), self.K_coords['x'].max())
-        max_y = max(self.Q_coords['y'].max(), self.K_coords['y'].max())
+        max_x = max(self.Q_coords_full['x'].max(), self.K_coords_full['x'].max())
+        max_y = max(self.Q_coords_full['y'].max(), self.K_coords_full['y'].max())
         
-        image1 = self._dataframe_to_image(self.Q_coords, max_x, max_y)
-        image2 = self._dataframe_to_image(self.K_coords, max_x, max_y)
+        image1 = self._dataframe_to_image(self.Q_coords_full, max_x, max_y)
+        image2 = self._dataframe_to_image(self.K_coords_full, max_x, max_y)
 
         (peak_value, mse_value, ssim_value, ncc_value, psr_value, 
             corr_coeff_value) = self._calculate_metrics(image1, image2)

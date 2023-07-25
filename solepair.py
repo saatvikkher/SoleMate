@@ -169,11 +169,19 @@ class SolePair():
         # Apply the best_shift
         self.K.coords.loc[:, "x"] += best_shift[0]
         self.K.coords.loc[:, "y"] += best_shift[1]
+        self.K.coords_full.loc[:, "x"] += best_shift[0]
+        self.K.coords_full.loc[:, "y"] += best_shift[1]
 
         transformed_k = pd.DataFrame(
             self._transform(self.K.coords.to_numpy(), self.T))
+        
+        # transform the full coordinates as well for PC metrics
+        transformed_k_full = pd.DataFrame(
+            self._transform(self.K.coords_full.to_numpy(), self.T))
 
         self.K.aligned_coordinates = transformed_k.rename(
+            columns={0: 'x', 1: 'y'})
+        self.K.aligned_full = transformed_k_full.rename(
             columns={0: 'x', 1: 'y'})
 
         self.aligned = True
@@ -181,8 +189,10 @@ class SolePair():
         # reverse best_shift
         self.K.coords.loc[:, "x"] -= best_shift[0]
         self.K.coords.loc[:, "y"] -= best_shift[1]
+        self.K.coords_full.loc[:, "x"] -= best_shift[0]
+        self.K.coords_full.loc[:, "y"] -= best_shift[1]
 
-        return self.Q.coords, self.K.aligned_coordinates
+        return self.Q.coords, self.K.aligned_coordinates, self.Q.coords_full, self.K.aligned_full
 
     def _icp_helper(self, max_iterations: int = 10000,
                     tolerance: float = 0.00001,
