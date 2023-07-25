@@ -6,7 +6,6 @@ from scipy.stats import kurtosis
 import math
 from solepair import SolePair
 from sklearn.cluster import AgglomerativeClustering, KMeans
-from scipy.signal import correlate2d
 from skimage.metrics import structural_similarity as ssim
 
 class SolePairCompare:
@@ -257,7 +256,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       metric='euclidean')
+                                                       affinity='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
@@ -573,8 +572,8 @@ class SolePairCompare:
         '''
         metrics_dict = {}
         for r in round_coords:
-            set1 = set(map(tuple, self.Q.coords.round(r).values))
-            set2 = set(map(tuple, self.K.aligned_coordinates.round(r).values))
+            set1 = set(map(tuple, self.Q_coords.round(r).values))
+            set2 = set(map(tuple, self.K_coords.round(r).values))
             intersection = len(set1.intersection(set2))
             union = len(set1) + len(set2) - intersection
             metrics_dict['jaccard_index_' + str(r)] = intersection / union
