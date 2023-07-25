@@ -6,7 +6,8 @@ from scipy.stats import kurtosis
 import math
 from solepair import SolePair
 from sklearn.cluster import AgglomerativeClustering, KMeans
-
+from scipy.signal import correlate2d
+from skimage.metrics import structural_similarity as ssim
 
 class SolePairCompare:
     '''
@@ -239,7 +240,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       affinity='euclidean')
+                                                       metric='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
@@ -417,3 +418,126 @@ class SolePairCompare:
 
         self.K_coords = K_keep
         self.K_keep_percent = len(K_keep) / len(self.K_coords)
+
+    def _dataframe_to_image(self, df, max_x, max_y):
+        '''
+        Dataframe to image converts a dataframe of aligned coordinates and 
+        converts it into an image in the format of a np.ndarray. This is helper 
+        function for PC metrics.
+
+        Inputs:
+            df: pd.DataFrame
+            max_x: int (how wide the image is)
+            max_y: int (how tall the image is)
+
+        Returns:
+            image (np.ndarray): aligned image in the format of a np.ndarray
+        '''
+        max_x_int = int(math.ceil(max_x))
+        max_y_int = int(math.ceil(max_y))
+        image = np.zeros((max_y_int + 1, max_x_int + 1))  # Dimensions based on max x and y coordinates
+        image[df['y'].astype(int), df['x'].astype(int)] = 255  # Set the points to 255 (white) for visualization
+        return image
+
+    def _phase_only_correlation(self, image1, image2):
+        '''
+        Computes phase only correlation between two images using fast fourier 
+        transform. 
+
+        Inputs:
+            image1: np.ndarray
+            image2: np.ndarray
+
+        Returns:
+            phase_correlation (float)
+        '''
+        fft_image1 = np.fft.fft2(image1)
+        fft_image2 = np.fft.fft2(image2)
+
+        # Compute cross-power spectrum
+        cross_power_spectrum = np.conj(fft_image1) * fft_image2
+
+        # Compute phase correlation
+        phase_correlation = np.fft.ifft2(cross_power_spectrum)
+        phase_correlation = np.abs(phase_correlation)
+
+        return phase_correlation
+
+    def _calculate_metrics(self, image1, image2):
+        '''
+        Calculates similarity metrics of two shoeprint images using phase-only 
+        correlation. Phase-correlation metrics include phase correlation value, 
+        mean squared error, structural similarity index, normalized 
+        cross-correlation coefficient, peak-to-sidelobe ratio, and the 
+        correlation coefficient.
+
+        Inputs:
+            image1: np.ndarray
+            image2: np.ndarray
+
+        Returns:
+            tuple(float)
+        '''
+        phase_correlation = self._phase_only_correlation(image1, image2)
+
+        # Find the peak position
+        peak_position = np.unravel_index(np.argmax(phase_correlation), 
+                                         phase_correlation.shape)
+
+        # Align the images based on the peak position
+        aligned_image2 = np.roll(image2, -np.array(peak_position), axis=(0, 1))
+
+        # Mean Squared Error (MSE)
+        mse = np.mean((image1 - aligned_image2) ** 2)
+
+        # Structural Similarity Index (SSIM)
+        ssim_index, _ = ssim(image1, aligned_image2, full=True)
+
+        # Normalize the images for NCC computation
+        norm_image1 = (image1 - np.mean(image1)) / np.std(image1)
+        norm_image2 = ((aligned_image2 - np.mean(aligned_image2)) / 
+                        np.std(aligned_image2))
+
+        # Normalized Cross-Correlation Coefficient (NCC)
+        ncc = np.mean(norm_image1 * norm_image2)
+
+        # Peak-to-Sidelobe Ratio (PSR)
+        psr = np.max(phase_correlation) / np.mean(phase_correlation)
+
+        # Correlation Coefficient
+        correlation_coefficient = np.corrcoef(image1.ravel(), 
+                                              aligned_image2.ravel())[0, 1]
+        
+        # Stuff we don't know how to explain yet
+        peak_value = np.max(phase_correlation)
+        
+        # peak_position = np.unravel_index(np.argmax(phase_correlation), 
+        # phase_correlation.shape)
+        return peak_value, mse, ssim_index, ncc, psr, correlation_coefficient
+
+    def pc_metrics(self):
+        '''
+        Performs phase-correlation calculations and retrieves phase correlation
+        metrics.
+
+        Returns:
+            (dict): a dictionary object containing all the pc metrics
+        '''
+        max_x = max(self.Q_coords['x'].max(), self.K_coords['x'].max())
+        max_y = max(self.Q_coords['y'].max(), self.K_coords['y'].max())
+        
+        image1 = self._dataframe_to_image(self.Q_coords, max_x, max_y)
+        image2 = self._dataframe_to_image(self.K_coords, max_x, max_y)
+
+        (peak_value, mse_value, ssim_value, ncc_value, psr_value, 
+            corr_coeff_value) = self._calculate_metrics(image1, image2)
+
+        metrics_dict = {}
+        metrics_dict["Peak Value"] = peak_value
+        metrics_dict["MSE"] = mse_value
+        metrics_dict["SSIM"] = ssim_value
+        metrics_dict["NCC"] = ncc_value
+        metrics_dict["PSR"] = psr_value
+        metrics_dict["Correlation Coefficient"] = corr_coeff_value
+
+        return metrics_dict
