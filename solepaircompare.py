@@ -394,7 +394,7 @@ class SolePairCompare:
         metrics_dict = {}
         metrics_dict['centroid_distance_n_clusters_'+str(n_clusters)] = self._centroid_distance_metric(
             q_kmeans_centroids, k_kmeans_centroids)
-        metrics_dict['cluster_proprtion_n_clusters_'+str(n_clusters)] = self._cluster_prop_metric(
+        metrics_dict['cluster_proportion_n_clusters_'+str(n_clusters)] = self._cluster_prop_metric(
             q_df_labels, k_df_labels, n_clusters)
         metrics_dict['iterations_k_n_clusters_'+str(n_clusters)] = k_kmeans.n_iter_
         metrics_dict['wcv_ratio_n_clusters_'+str(n_clusters)] = self._within_cluster_var_metric(
@@ -551,11 +551,32 @@ class SolePairCompare:
             corr_coeff_value) = self._calculate_metrics(image1, image2)
 
         metrics_dict = {}
-        metrics_dict["Peak Value"] = peak_value
+        metrics_dict["peak_value"] = peak_value
         metrics_dict["MSE"] = mse_value
         metrics_dict["SSIM"] = ssim_value
         metrics_dict["NCC"] = ncc_value
         metrics_dict["PSR"] = psr_value
-        metrics_dict["Correlation Coefficient"] = corr_coeff_value
+        metrics_dict["correlation_coefficient"] = corr_coeff_value
 
+        return metrics_dict
+    
+    def jaccard_index(self, round_coords=[0, -1, -2]):
+        '''
+        Calculates the Jaccard index between the two shoeprints. The Jaccard
+        index is the size of the intersection divided by the size of the union
+        of the two shoeprints.
+
+        Inputs:
+            round_coords (list): list of rounding values to round the coordinates
+
+        Returns:
+            (float): Jaccard index
+        '''
+        metrics_dict = {}
+        for r in round_coords:
+            set1 = set(map(tuple, self.Q.coords.round(r).values))
+            set2 = set(map(tuple, self.K.aligned_coordinates.round(r).values))
+            intersection = len(set1.intersection(set2))
+            union = len(set1) + len(set2) - intersection
+            metrics_dict['jaccard_index_' + str(r)] = intersection / union
         return metrics_dict
