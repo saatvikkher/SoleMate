@@ -297,3 +297,16 @@ def _create_knm_pairs_for_diff_times(df,
     knms_df = knms_df.reset_index(drop=True)
     knms_df.rename(columns={0: 'q', 1: 'k'}, inplace=True)
     knms_df.to_csv(name, index=False)
+
+def _downsample_OOD():
+    '''
+    Downsample the OOD data from 3000 pairs to 500 pairs each for KM and KNM.
+    '''
+    OOD_TRAIN_KM = pd.read_csv("Jul24_submission/pair_info/OOD_TRAIN_KM.csv")
+    OOD_TRAIN_KNM = pd.read_csv("Jul24_submission/pair_info/OOD_TRAIN_KNM.csv")
+    OOD_TEST_KM = pd.read_csv("Jul24_submission/pair_info/OOD_TEST_KM.csv")
+    OOD_TEST_KNM = pd.read_csv("Jul24_submission/pair_info/OOD_TEST_KNM.csv")
+    OOD_TEST_KM.sample(500, random_state=0).to_csv("Jul24_submission/pair_info/OOD_TEST_KM.csv", index=False)
+    OOD_TEST_KNM.sample(500, random_state=0).to_csv("Jul24_submission/pair_info/OOD_TEST_KNM.csv", index=False)
+    OOD_TRAIN_KM.sample(500, random_state=0).to_csv("Jul24_submission/pair_info/OOD_TRAIN_KM.csv", index=False)
+    OOD_TRAIN_KNM.sample(500, random_state=0).to_csv("Jul24_submission/pair_info/OOD_TRAIN_KNM.csv", index=False)

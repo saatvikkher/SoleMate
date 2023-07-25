@@ -78,7 +78,7 @@ class SolePair():
     def icp_transform(self, max_iterations: int = 10000,
                       tolerance: float = 0.00001,
                       downsample_rate: float = 1.0,
-                      random_seed: int = 47,
+                      random_seed: int = 0,
                       shift_left=False,
                       shift_right=False,
                       shift_up=False,
@@ -197,7 +197,7 @@ class SolePair():
     def _icp_helper(self, max_iterations: int = 10000,
                     tolerance: float = 0.00001,
                     downsample_rate: float = 1.0,
-                    random_seed: int = 47,
+                    random_seed: int = 0,
                     two_way: bool = False,
                     overlap_threshold=3):
         '''

@@ -20,7 +20,7 @@ class SolePairCompare:
                  pair: SolePair,
                  downsample_rate=1.0,
                  icp_downsample_rates=[1.0],
-                 random_seed=47,
+                 random_seed=0,
                  shift_left=False,
                  shift_right=False,
                  shift_up=False,
