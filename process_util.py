@@ -104,6 +104,7 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
     row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
 
     row.update(sc.pc_metrics())
+    row.update(sc.jaccard_index())
 
     return row
 
