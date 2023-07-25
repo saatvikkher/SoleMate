@@ -10,8 +10,8 @@ sys.stdout = open('./BASELINE_TRAIN_0_400.log', 'w')
 print("[BASELINE TRAIN 0 - 400] Started.")
 
 # Read in training split
-km_train = pd.read_csv("Jul17_submission/pair_info/BASELINE_TRAIN_KM.csv")
-knm_train = pd.read_csv("Jul17_submission/pair_info/BASELINE_TRAIN_KNM.csv")
+km_train = pd.read_csv("Jul24_submission/pair_info/BASELINE_TRAIN_KM.csv")
+knm_train = pd.read_csv("Jul24_submission/pair_info/BASELINE_TRAIN_KNM.csv")
 
 combined_train = pd.concat([km_train, knm_train], ignore_index=True)[:400]
 
