@@ -45,8 +45,8 @@ class Sole:
             self._coords_full = coords
 
         if flipped:
-            self._coords = self.flip_coords(self._coords)
-            self._coords_full = self.flip_coords(self._coords_full)
+            self._coords = self._flip_coords(self._coords)
+            self._coords_full = self._flip_coords(self._coords_full)
 
     def __str__(self):
         return "Shoeprint Object: " + self.file_name
