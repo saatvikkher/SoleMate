@@ -5,7 +5,7 @@ import gc
 import time
 
 # Redirect the standard output to the log file
-sys.stdout = open('./DIFF_TIME_1VS3_TRAIN_400_END.log', 'w')
+sys.stdout = open('./DIFF_TIME_1VS3_TRAIN_400_800.log', 'w')
 
 print("[DIFF TIME 1VS3 TRAIN] Started.")
 

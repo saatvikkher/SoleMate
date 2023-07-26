@@ -25,7 +25,7 @@ df = pd.DataFrame()
 for i in range(len(combined_test)):
     start = time.time()
     if i % 20 == 0:
-        print("[DIFF TIME 1VS3 TRAIN] Progress: ", (i*100) / len(combined_test))
+        print("[DIFF TIME 1VS3 TEST] Progress: ", (i*100) / len(combined_test))
     try:
         row = pd.DataFrame(process_image(
             Q_files[i], K_files[i], mated[i]), index=[0])
