@@ -208,7 +208,7 @@ def main():
                     # Subsetting only cluster metrics with n_clusters=20
                     cluster_metrics = {}
                     cluster_metrics['centroid_distance'] = all_cluster_metrics['centroid_distance_n_clusters_20']
-                    cluster_metrics['cluster_proprtion'] = all_cluster_metrics['cluster_proprtion_n_clusters_20']
+                    cluster_metrics['cluster_proprtion'] = all_cluster_metrics['cluster_proportion_n_clusters_20']
                     cluster_metrics['iterations_k'] = all_cluster_metrics['iterations_k_n_clusters_20']
                     cluster_metrics['wcv'] = all_cluster_metrics['wcv_ratio_n_clusters_20']
 
