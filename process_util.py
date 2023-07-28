@@ -62,7 +62,7 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.5], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
@@ -90,9 +90,12 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
     # Running metrics
     row.update(sc.min_dist())
 
+    row.update(sc.cluster_metrics(n_clusters = 10))
     row.update(sc.cluster_metrics(n_clusters = 20))
+    row.update(sc.cluster_metrics(n_clusters = 50))
     row.update(sc.cluster_metrics(n_clusters = 100))
     row.update(sc.cluster_metrics(n_clusters = 500))
+    row.update(sc.cluster_metrics(n_clusters = 1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
@@ -102,6 +105,12 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
 
     row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
     row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+
+    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+
+    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
@@ -167,7 +176,7 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.5], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
@@ -195,9 +204,12 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
     # Running metrics
     row.update(sc.min_dist())
 
+    row.update(sc.cluster_metrics(n_clusters = 10))
     row.update(sc.cluster_metrics(n_clusters = 20))
+    row.update(sc.cluster_metrics(n_clusters = 50))
     row.update(sc.cluster_metrics(n_clusters = 100))
     row.update(sc.cluster_metrics(n_clusters = 500))
+    row.update(sc.cluster_metrics(n_clusters = 1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
@@ -207,6 +219,12 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
 
     row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
     row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+
+    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+
+    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
@@ -271,7 +289,7 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
         pair = SolePair(outside, K, mated=mated)
     
     sc = SolePairCompare(pair, 
-                         icp_downsample_rates=[0.05, 0.2, 0.5], 
+                         icp_downsample_rates=[0.04, 0.05, 0.06, 0.2, 0.5], 
                          two_way=True, 
                          shift_left=True,
                          shift_right=True, 
@@ -299,9 +317,12 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
     # Running metrics
     row.update(sc.min_dist())
 
+    row.update(sc.cluster_metrics(n_clusters = 10))
     row.update(sc.cluster_metrics(n_clusters = 20))
+    row.update(sc.cluster_metrics(n_clusters = 50))
     row.update(sc.cluster_metrics(n_clusters = 100))
     row.update(sc.cluster_metrics(n_clusters = 500))
+    row.update(sc.cluster_metrics(n_clusters = 1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
@@ -311,6 +332,12 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
 
     row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
     row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+
+    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+
+    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
