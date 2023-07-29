@@ -96,10 +96,10 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DSca
     row.update(sc.cluster_metrics(n_clusters = 100))
     row.update(sc.cluster_metrics(n_clusters = 500))
 
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 10, n_points_per_cluster=10))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 30, n_points_per_cluster=30))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 100, n_points_per_cluster=100))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 1000, n_points_per_cluster=1000))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 10, n_points_per_cluster=10))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 30, n_points_per_cluster=30))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
@@ -215,10 +215,10 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
     row.update(sc.cluster_metrics(n_clusters = 500))
     row.update(sc.cluster_metrics(n_clusters = 1000))
 
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 10, n_points_per_cluster=10))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 30, n_points_per_cluster=30))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 100, n_points_per_cluster=100))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 1000, n_points_per_cluster=1000))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 10, n_points_per_cluster=10))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 30, n_points_per_cluster=30))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
@@ -333,10 +333,10 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
     row.update(sc.cluster_metrics(n_clusters = 500))
     row.update(sc.cluster_metrics(n_clusters = 1000))
 
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 10, n_points_per_cluster=10))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 30, n_points_per_cluster=30))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 100, n_points_per_cluster=100))
-    row.update(sc.cluster_metrics(n_clusters = sc.Q_coords // 1000, n_points_per_cluster=1000))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 10, n_points_per_cluster=10))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 30, n_points_per_cluster=30))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
+    row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
     row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
     row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
