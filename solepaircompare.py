@@ -255,7 +255,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       affinity='euclidean')
+                                                       metric='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
@@ -367,7 +367,7 @@ class SolePairCompare:
         wcv_metric = (wcv_Q - wcv_K) / wcv_Q
         return wcv_metric
 
-    def cluster_metrics(self, n_clusters: int = 20, downsample_rate=0.2):
+    def cluster_metrics(self, n_clusters: int = 20, downsample_rate=0.2, n_points_per_cluster=None):
         Q_coords_ds = self.Q_coords.sample(
             frac=downsample_rate, random_state=self.random_seed)
         K_coords_ds = self.K_coords.sample(
@@ -388,13 +388,18 @@ class SolePairCompare:
                                                                          n_clusters=n_clusters)
 
         # Prepare for the dict to return
+        if n_points_per_cluster is None:
+            metric_name = 'n_clusters_' + str(n_clusters)
+        else:
+            metric_name = 'n_points_per_cluster_' + str(n_points_per_cluster)
+
         metrics_dict = {}
-        metrics_dict['centroid_distance_n_clusters_'+str(n_clusters)] = self._centroid_distance_metric(
+        metrics_dict['centroid_distance_'+metric_name] = self._centroid_distance_metric(
             q_kmeans_centroids, k_kmeans_centroids)
-        metrics_dict['cluster_proportion_n_clusters_'+str(n_clusters)] = self._cluster_prop_metric(
+        metrics_dict['cluster_proportion_'+metric_name] = self._cluster_prop_metric(
             q_df_labels, k_df_labels, n_clusters)
-        metrics_dict['iterations_k_n_clusters_'+str(n_clusters)] = k_kmeans.n_iter_
-        metrics_dict['wcv_ratio_n_clusters_'+str(n_clusters)] = self._within_cluster_var_metric(
+        metrics_dict['iterations_k_'+metric_name] = k_kmeans.n_iter_
+        metrics_dict['wcv_ratio_'+metric_name] = self._within_cluster_var_metric(
             q_df_labels, k_df_labels, q_kmeans_centroids, k_kmeans_centroids, n_clusters)
 
         return metrics_dict
@@ -567,7 +572,8 @@ class SolePairCompare:
             round_coords (list): list of rounding values to round the coordinates
 
         Returns:
-            (float): Jaccard index
+            (dict): a dictionary object containing all the jaccard index metrics
+            at the given rounding values
         '''
         metrics_dict = {}
         for r in round_coords:
