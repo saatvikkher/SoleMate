@@ -572,7 +572,8 @@ class SolePairCompare:
             round_coords (list): list of rounding values to round the coordinates
 
         Returns:
-            (float): Jaccard index
+            (dict): a dictionary object containing all the jaccard index metrics
+            at the given rounding values
         '''
         metrics_dict = {}
         for r in round_coords:
