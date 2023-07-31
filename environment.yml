@@ -1,7 +1,7 @@
 name: solemate
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - python=3.9.12
   - numpy==1.24.3
