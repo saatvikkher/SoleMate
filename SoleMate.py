@@ -233,6 +233,7 @@ def main():
                                  horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Q Percent Overlap")
                         st.pyplot(q_pct)
+                        plt.close(q_pct)
                     with col2:
                         k_pct = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="k_pct", hue="mated",
@@ -244,6 +245,7 @@ def main():
                                  horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("K Percent Overlap")
                         st.pyplot(k_pct)
+                        plt.close(k_pct)
 
                     with st.expander(":bar_chart: About the metric: Overlap"):
                         st.subheader("Percent Overlap")
@@ -270,6 +272,7 @@ def main():
                         plt.title("Mean CP Distance")
                         plt.xlim((-5, 50))
                         st.pyplot(mean)
+                        plt.close(mean)
                     with col2:
                         std = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="std", hue="mated",
@@ -282,6 +285,7 @@ def main():
                         plt.title("Standard Deviation CP Distance")
                         plt.xlim((-5, 50))
                         st.pyplot(std)
+                        plt.close(std)
 
                     col1, col2 = st.columns(2)
                     with col1:
@@ -296,6 +300,7 @@ def main():
                         plt.title("10th Percentile CP Distance")
                         plt.xlim((-0.25, 3))
                         st.pyplot(p10)
+                        plt.close(p10)
                     with col2:
                         p25 = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="0.25", hue="mated",
@@ -308,6 +313,7 @@ def main():
                         plt.title("25th Percentile CP Distance")
                         plt.xlim((-0.5, 10))
                         st.pyplot(p25)
+                        plt.close(p25)
 
                     col1, col2 = st.columns(2)
                     with col1:
@@ -322,6 +328,7 @@ def main():
                         plt.title("Median CP Distance")
                         plt.xlim((-2, 30))
                         st.pyplot(p50)
+                        plt.close(p50)
                     with col2:
                         p75 = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="0.75", hue="mated",
@@ -334,6 +341,7 @@ def main():
                         plt.title("75th Percentile CP Distance")
                         plt.xlim((-5, 70))
                         st.pyplot(p75)
+                        plt.close(p75)
 
                     __, col2, __ = st.columns([1, 2, 1])
                     with col2:
@@ -348,6 +356,7 @@ def main():
                         plt.title("90th Percentile CP Distance")
                         plt.xlim((-10, 150))
                         st.pyplot(p90)
+                        plt.close(p90)
 
                     with st.expander(":bar_chart: About the metric: Closest Point Distances"):
                         st.subheader("Closest Point Distances")
@@ -378,6 +387,7 @@ def main():
                         plt.title("Centroid Distance")
                         plt.xlim((-50, 600))
                         st.pyplot(centroid_distance)
+                        plt.close(centroid_distance)
                     with col2:
                         cluster_proprtion = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="cluster_proprtion", hue="mated",
@@ -389,6 +399,7 @@ def main():
                                  horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Cluster Proportion")
                         st.pyplot(cluster_proprtion)
+                        plt.close(cluster_proprtion)
 
                     col1, col2 = st.columns(2)
                     with col1:
@@ -402,6 +413,7 @@ def main():
                                  horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
                         plt.title("Iterations K")
                         st.pyplot(iterations_k)
+                        plt.close(iterations_k)
                     with col2:
                         wcv = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=load_train(), x="wcv", hue="mated",
@@ -414,6 +426,7 @@ def main():
                         plt.title("Within Cluster Variation")
                         plt.xlim((-2, 0.5))
                         st.pyplot(wcv)
+                        plt.close(wcv)
 
                     with st.expander(":bar_chart: About the metric: Clustering"):
                         st.subheader("Clustering")
