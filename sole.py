@@ -221,23 +221,25 @@ class Sole:
 
         return df, df_full
 
-    def plot(self, color=WILLIAMS_PURPLE, size: float = 0.5):
+    def plot(self, color=WILLIAMS_PURPLE, size: float = 0.1, filename = None):
         '''
         Plots Sole based on original coordinates.
 
         Inputs:
             color (str)
             size (float): size of plot points s=size in plt.scatter()
+            filename (str): output file to save fig if desired, if no input, fig
+                will not be saved
 
         Returns:
             None
         '''
-
-        # Plot scatter plot 1
         plt.scatter(self.coords.x, self.coords.y, color=color, s=size)
-
-        # Adjust the plot boundaries
         plt.tight_layout()
+        plt.gca().set_aspect('equal')
+
+        if filename is not None:
+            plt.savefig(filename, dpi=600)
 
         plt.show()
 
@@ -249,5 +251,3 @@ class Sole:
         max_y = max(coords['y'])
         temp_coords['y'] = temp_coords['y']*-1 + max_y
         return temp_coords
-        # self.coords = temp_coords
-        # self.flip_coords = temp_coords
