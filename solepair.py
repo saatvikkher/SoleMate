@@ -249,7 +249,8 @@ class SolePair():
              size: float = 0.1,
              aligned: bool = False,
              color_q=WILLIAMS_GOLD,
-             color_k=WILLIAMS_PURPLE):
+             color_k=WILLIAMS_PURPLE,
+             filename=None):
         '''
         Inputs:
             aligned: (bool) indicating if you want to access the aligned image
@@ -261,10 +262,14 @@ class SolePair():
         else:
             plt.scatter(self.K.coords.x, self.K.coords.y,
                         s=size, label="K", color=color_k)
-
+        
         plt.scatter(self.Q.coords.x, self.Q.coords.y,
                     s=size, label="Q", color=color_q)
 
+        plt.gca().set_aspect('equal')
         plt.legend()
+
+        if filename is not None:
+            plt.savefig(filename, dpi=600)
 
         plt.show()
