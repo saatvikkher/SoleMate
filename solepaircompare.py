@@ -10,7 +10,11 @@ from skimage.metrics import structural_similarity as ssim
 class SolePairCompare:
     '''
     SolePairCompare will take two shoeprint images (Q and K) and eventually 
-    outputs the collection of similarity metrics (including ...) between Q and K.
+    outputs the collection of similarity metrics comparing Q and K including 
+    variations of percent overlap and overlap, metrics based on clustering, 
+    metrics based on the closest point in the other shoe, metrics based on 
+    phase-only correlation, and image-based metrics. SolePairCompare initializes
+    the comparison class by aligning the two shoeprints in the given pair.
 
     This class also provides methods for intermediate steps in this pipeline.
     '''
@@ -28,18 +32,26 @@ class SolePairCompare:
                  icp_overlap_threshold=3) -> None:
         '''
         Inputs:
-            Q: (Pandas DataFrame) for shoe Q
-            K: (Pandas DataFrame) for shoe K
+            pair (SolePair): the pair of shoes used for comparison
+            downsample_rate (float): a real number between 0 and 1 by which the 
+                points in the shoe will be downsampled for alignment
+            random_seed (int)
+            shift_left (bool): try the left random-start in ICP implementation
+            shift_right (bool): try the right random-start in ICP implementation
+            shift_up (bool): try the up random-start in ICP implementation
+            shift_down (bool): try the down random-start in ICP implementation
+            two_way (bool): try aliging the shoes Q over K and K over Q in ICP
+            icp_overlap_threshold (float): threshold for calculating percent 
+                overlap when determing the best alignment direction
         '''
 
-        # Sorting the icp_downsample_rates to optimize time efficiency of the short circuit
+        # Sorting icp_downsample_rates to optimize efficiency of short circuit
         icp_downsample_rates.sort()
             
         best_icp_downsample_rate = None
         best_percent_overlap = -1
 
         for icp_downsample_rate in icp_downsample_rates:
-            # pair.icp_transform sets self._aligned, self._T, and self.K.aligned_coordinates in place
             self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=icp_downsample_rate,
                                                                                                          shift_left=shift_left,
                                                                                                          shift_right=shift_right,
@@ -48,13 +60,15 @@ class SolePairCompare:
                                                                                                          two_way=two_way,
                                                                                                          overlap_threshold=icp_overlap_threshold)
 
-            self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
-            self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
+            self._Q_coords = self._Q_coords.sample(frac=downsample_rate, 
+                                                   random_state=random_seed)
+            self._K_coords = self._K_coords.sample(frac=downsample_rate, 
+                                                   random_state=random_seed)
             
             # Check the percent overlap of this icp_downsample_rate
             po = self.percent_overlap()
 
-            # higher the better
+            # Choose the higher percent overlap as the better ICP 
             if po > best_percent_overlap:
                 best_percent_overlap = po
                 best_icp_downsample_rate = icp_downsample_rate
@@ -70,11 +84,10 @@ class SolePairCompare:
                                                                                                         shift_down=shift_down,
                                                                                                         two_way=two_way,
                                                                                                         overlap_threshold=icp_overlap_threshold)
-
             self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
             self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
 
-        # The percent of original K that is keeping
+        # The percent of original K that will be kept
         self.K_keep_percent = 1.0
         self.pair = pair
         self.random_seed = random_seed
@@ -119,7 +132,8 @@ class SolePairCompare:
         '''
         Changes a dataframe to a hashtable.
 
-        Inputs: df (dataframe)
+        Inputs:
+            df (pd.DataFrame of integer values)
 
         Returns: (defaultdict)
         '''
@@ -147,6 +161,16 @@ class SolePairCompare:
         Returns: (bool)
         '''
         def get_dist(point_a, point_b):
+            '''
+            A helper function for _is_overlap that retrieves the distance b/w
+            point_a and point_b
+
+            Inputs:
+                point_a (list(float))
+                point_b (list(float))
+
+            Returns: (float)
+            '''
             x1, y1 = point_a[0], point_a[1]
             x2, y2 = point_b[0], point_b[1]
             return math.hypot(x1-x2, y1-y2)
@@ -154,7 +178,7 @@ class SolePairCompare:
         for potential_x in range(x-threshold, x+threshold+1):
             for potential_y in range(y-threshold, y+threshold+1):
                 if potential_x in ht and potential_y in ht[potential_x]:
-                    # also check whether that matched point is in circle of radius = threshold
+                    # also check whether the potential point is within threshold
                     if get_dist([x, y], [potential_x, potential_y]) <= threshold:
                         return True
         return False
@@ -171,9 +195,8 @@ class SolePairCompare:
             threshold (int): if distance between two points <= threshold, 
                              it qualifies as an overlap. 
 
-        Returns: proportion of points that overlap (float)
+        Returns: (float): proportion of points that overlap 
         '''
-
         # Round Q and K coords because the hashtable implementation in
         # _df_to_hash relies on integer values of coordinates
         if Q_as_base:
@@ -193,8 +216,8 @@ class SolePairCompare:
         (Similarity metric) 
 
         min_dist is a similarity metric comparing the dataframes of K and Q. 
-        For each sample point from the base dataframe, min_dist finds the Euclidean 
-        distance of the closest point in the other dataframe using the 
+        For each sample point from the base dataframe, min_dist finds the 
+        Euclidean distance of the closest point in the other dataframe using the 
         kdtree closest neighbor algorithm. 
 
         It outputs distribution statistics including the average, 
@@ -205,7 +228,8 @@ class SolePairCompare:
 
         Returns:
             (dict): a dictionary of statistics with keys "mean", "std", "0.1", 
-                    "0.25", "0.5", "0.75", "0.9", "kurtosis"
+                    "0.25", "0.5", "0.75", "0.9", "kurtosis" and values of float
+                    type
         '''
 
         # If Q_as_base == True, Q is the shoe we sample from
@@ -218,7 +242,7 @@ class SolePairCompare:
 
         min_dists = []
 
-        # We assume the column names are "x" and "y"
+        # We assume the column names are "x" and "y" as created in Sole
         points = df1[["x", "y"]].values
         kdtree = KDTree(points)
         query_points = df2[['x', 'y']].values
@@ -236,7 +260,6 @@ class SolePairCompare:
         min_dists_dict["0.5"] = np.quantile(min_dists_arr, 0.5)
         min_dists_dict["0.75"] = np.quantile(min_dists_arr, 0.75)
         min_dists_dict["0.9"] = np.quantile(min_dists_arr, 0.9)
-        # min_dists_dict["kurtosis"] = kurtosis(min_dists_arr)
 
         return min_dists_dict
 
@@ -246,9 +269,9 @@ class SolePairCompare:
         on them. It returns the centroid points of the hierarchical clustering.
 
         Inputs:
-            data (np.array, shape of nx2)
-            n_clusters (int): the number of clusters generated by h. clustering
-
+            df (pd.DataFrame): shoeprint used for clustering
+            n_clusters (int): the number of clusters
+        
         Returns:
             centroid_pts (pd.dataframe with columns 'x' and 'y')
         '''
@@ -269,14 +292,15 @@ class SolePairCompare:
         initial points. 
 
         Inputs:
-            df: x, y coordinates of a shoe
-            init: the points where kmeans clustering begins
-            n_clusters: the number of clusters
+            df (pd.DataFrame): x, y coordinates of a shoe
+            init (pd.DataFrame): the points where kmeans clustering begins
+            n_clusters (int): the number of clusters
 
         Returns:
             centroids (pd.DataFrame)
-            df_labels (pd.DataFrame with columns "x", "y", and "label")
-            kmeans (KMeans object)
+            df_labels (pd.DataFrame with columns "x", "y", and "label"): a df of
+                labels corresponding to the cluster of each (x, y) point
+            kmeans (KMeans object): A summary of kmeans clustering for metrics
         '''
         assert init.shape[0] == n_clusters
 
@@ -286,8 +310,8 @@ class SolePairCompare:
         kmeans.fit(df_arr)
 
         df_labels['label'] = kmeans.labels_
-        _ = kmeans.cluster_centers_
-        centroids = pd.DataFrame(_, columns=['x', 'y'])
+        cluster_centers = kmeans.cluster_centers_
+        centroids = pd.DataFrame(cluster_centers, columns=['x', 'y'])
 
         return centroids, df_labels, kmeans
 
@@ -296,7 +320,7 @@ class SolePairCompare:
         Computes the centroid distance metric. Given two sets of centroids, 
         compute the distance between each paired centroid. Then, compute the 
         rmse of these distances. Since rmse is always postive, centroids_a can 
-        be either shoe Q or shoe K.
+        be either shoeprint Q or shoeprint K.
 
         Inputs:
             centroids_a: dataframe of n_clusters points, has columns "x" and "y"
@@ -319,13 +343,18 @@ class SolePairCompare:
 
     def _cluster_prop_metric(self, df_a: pd.DataFrame, df_b: pd.DataFrame, n_clusters: int) -> float:
         '''
-        TODO: 
+        The cluster proportion metric is the rmse of the difference of 
+        proportion sizes between corresponding clusters in shoeprint Q and 
+        shoeprint K. Since rmse is claculated, df_a can be either shoeprint Q or 
+        shoeprint K
 
-        S I M O N
-        I I D O C
-        M D M ? ?
-        O O ? O !
-        N C ? ! N
+        Inputs:
+            df_a (pd.DataFrame): dataframe of either shoeprint Q or shoeprint K
+            df_b (pd.DataFrame): dataframe of the other shoeprint
+            n_clusters (int): the number of clusters
+
+        Returns:
+            rmse (float): the rmse of cluster proportion sizes
         '''
         cluster_prop_diff = []
         len_a = df_a.shape[0]
@@ -345,6 +374,9 @@ class SolePairCompare:
         return rmse
 
     def _cluster_var(self, df: pd.DataFrame, centroid: pd.DataFrame) -> float:
+        '''
+        Cluster 
+        '''
         df_arr = df.to_numpy()
         distance = np.linalg.norm(df_arr - centroid, axis=1)
         distance_squared = distance ** 2
@@ -513,19 +545,11 @@ class SolePairCompare:
         # Structural Similarity Index (SSIM)
         ssim_index, _ = ssim(image1, aligned_image2, full=True)
 
-        # Normalize the images for NCC computation
-        norm_image1 = (image1 - np.mean(image1)) / np.std(image1)
-        norm_image2 = ((aligned_image2 - np.mean(aligned_image2)) / 
-                        np.std(aligned_image2))
-
-        # Normalized Cross-Correlation Coefficient (NCC)
-        ncc = np.mean(norm_image1 * norm_image2)
-
         # Peak-to-Sidelobe Ratio (PSR)
         psr = np.max(phase_correlation) / np.mean(phase_correlation)
 
-        # Correlation Coefficient
-        correlation_coefficient = np.corrcoef(image1.ravel(), 
+        # Normalized Correlation Coefficient
+        NCC = np.corrcoef(image1.ravel(), 
                                               aligned_image2.ravel())[0, 1]
         
         # Stuff we don't know how to explain yet
@@ -533,7 +557,7 @@ class SolePairCompare:
         
         # peak_position = np.unravel_index(np.argmax(phase_correlation), 
         # phase_correlation.shape)
-        return peak_value, mse, ssim_index, ncc, psr, correlation_coefficient
+        return peak_value, mse, ssim_index, psr, NCC
 
     def pc_metrics(self):
         '''
@@ -549,16 +573,14 @@ class SolePairCompare:
         image1 = self._dataframe_to_image(self.Q_coords_full, max_x, max_y)
         image2 = self._dataframe_to_image(self.K_coords_full, max_x, max_y)
 
-        (peak_value, mse_value, ssim_value, ncc_value, psr_value, 
-            corr_coeff_value) = self._calculate_metrics(image1, image2)
+        (peak_value, mse_value, ssim_value, psr_value, NCC) = self._calculate_metrics(image1, image2)
 
         metrics_dict = {}
         metrics_dict["peak_value"] = peak_value
         metrics_dict["MSE"] = mse_value
         metrics_dict["SSIM"] = ssim_value
-        metrics_dict["NCC"] = ncc_value
         metrics_dict["PSR"] = psr_value
-        metrics_dict["correlation_coefficient"] = corr_coeff_value
+        metrics_dict["NCC"] = NCC
 
         return metrics_dict
     
