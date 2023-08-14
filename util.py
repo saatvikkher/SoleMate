@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-METADATA = pd.read_csv("2DScanImages/Image-info.csv")
+METADATA = pd.read_csv("Pristine_AN/metadata.csv")
 METADATA_BLURRY = pd.read_csv("Blurry/metadata.csv")
 METADATA_OOD = pd.read_csv("OOD/metadata.csv")
 BLACK_WHITE_THRESHOLD = 85  # Bottom third of grayscale: 255 / 3 = 85

@@ -4,7 +4,7 @@ from solepaircompare import SolePairCompare
 from util import METADATA, METADATA_BLURRY, METADATA_OOD, OPP_FOOT
 
 
-def process_image(Q_file, K_file, mated, partial_type="full", folder_path="2DScanImages/"):
+def process_image(Q_file, K_file, mated, partial_type="full", folder_path="Pristine_AN/"):
     Q = Sole(folder_path + Q_file, border_width=160)
     K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
@@ -358,7 +358,7 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
 
     return row
 
-def process_image_unoptimized(Q_file, K_file, mated, partial_type="full", folder_path="2DScanImages/"):
+def process_image_unoptimized(Q_file, K_file, mated, partial_type="full", folder_path="Pristine_AN/"):
     Q = Sole(folder_path + Q_file, border_width=160)
     K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
