@@ -1,0 +1,179 @@
+---
+title: "kl_divergence"
+output: pdf_document
+date: "2023-07-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("/Users/lena2/Desktop/SoleMate")
+library(dplyr)
+library(tidyverse)
+library(philentropy)
+library(broom)
+library(glue)
+library(ggplot2)
+library(dgof)
+library(FNN)
+library(sfsmisc)
+library(gridExtra)
+```
+
+```{r}
+kldivergence <- function(df1, df2){
+    df1_count = length(df1)
+    df2_count = length(df2)
+    # put them into bins
+    bin_max = max(df1, df2)
+    n_bins <- 500
+    bin_labels <- seq(0, bin_max, by= bin_max/n_bins)
+    
+
+    df1_bin_counts <- cut(df1, breaks = bin_labels, include.lowest = TRUE, labels = FALSE)
+    df2_bin_counts <- cut(df2, breaks=bin_labels, include.lowest=TRUE, labels=FALSE)
+    
+    df1_count_vector <- table(df1_bin_counts)
+    df2_count_vector <- table(df2_bin_counts)
+
+    p_df1 <- numeric(n_bins)
+    p_df2 <- numeric(n_bins)
+    p_df1[as.integer(names(df1_count_vector))] <- as.integer(df1_count_vector)/df1_count
+    p_df2[as.integer(names(df2_count_vector))] <- as.integer(df2_count_vector)/df2_count
+
+    distr <- rbind(p_df1, p_df2)
+    kld <- KL(distr, unit='log')
+    
+    # return(kld)
+}
+```
+
+```{r}
+overlap_proportion <- function(df1, df2){
+  lower <- min(c(df1, df2)) - 1 
+  upper <- max(c(df1, df2)) + 1
+  
+  d1 <- density(df1, from=lower, to=upper)
+  d2 <- density(df2, from=lower, to=upper)
+  d <- data.frame(x=d1$x, a=d1$y, b=d2$y)
+  
+  d$w <- pmin(d$a, d$b)
+
+  total <- integrate.xy(d$x, d$a) + integrate.xy(d$x, d$b)
+  intersection <- integrate.xy(d$x, d$w)
+  
+  overlap <- (2*intersection) / total
+  
+  return(overlap)
+}
+```
+
+
+```{r}
+folderpath <- "/Users/lena2/Desktop/SoleMate/Jul29_results_copy"
+
+filenames <- list.files(folderpath)
+
+for (filename in filenames){
+  file <- read_csv(paste0(folderpath, "/", filename), show_col_types = FALSE)
+  cols <-colnames(file)
+  len <- length(cols)
+  df <- data.frame()
+  for (col in cols[15:len]){
+    print(col)
+    mated <- file %>%
+    filter(mated) %>%
+    select(col) %>%
+    pull() %>%
+    as.numeric()
+    
+    nonmated <- file %>%
+    filter(!mated) %>%
+    select(col) %>%
+    pull() %>%
+    as.numeric()
+
+    kld1 <- unname(kldivergence(mated, nonmated))
+    kld2 <- unname(kldivergence(nonmated, mated))
+    kst <- unname(ks.test(nonmated, mated)[[1]])
+    overlap <- overlap_proportion(mated, nonmated)
+    df <- bind_rows(df, tibble(col, kld1, kld2, kst, overlap))
+  }
+
+  write_csv(df, paste0("STATS_", filename))
+}
+
+```
+
+```{r}
+folderpath <- "/Users/lena2/Desktop/SoleMate/Jul29_results_copy"
+
+baseline <- "RESULT_BASELINE_TEST.csv"
+filenames_temp <- list.files(folderpath)
+filenames <- filenames_temp
+# filenames <- setdiff(filenames_temp, baseline)
+baseline_file <- read_csv(paste0(folderpath, "/", baseline), show_col_types = FALSE)
+
+for (filename in filenames){
+  file <- read_csv(paste0(folderpath, "/", filename), show_col_types = FALSE)
+  cols <-colnames(file)
+  cols <- setdiff(cols, "centroid_distance_n_clusters_1000")
+  cols <- setdiff(cols, "cluster_proportion_n_clusters_1000")
+  cols <- setdiff(cols, "iterations_k_n_clusters_1000")
+  cols <- setdiff(cols, "wcv_ratio_n_clusters_1000")
+
+  df <- data.frame()
+  len <- length(cols)
+  print(filename)
+  for (col in cols[15:len]){
+    print(col)
+    
+    km_baseline <- baseline_file %>%
+      filter(mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+    
+    print(km_baseline)
+    
+    km_comparison <- file %>%
+      filter(mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+    
+    print(km_comparison)
+    
+    knm_baseline <- baseline_file %>%
+      filter(!mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+    
+     
+  
+    knm_comparison <- file %>%
+      filter(!mated) %>%
+      select(col) %>%
+      pull() %>%
+      as.numeric()
+
+    
+    # km_kld <- unname(kldivergence(km_baseline, km_comparison))
+    km_kst <- unname(ks.test(km_baseline, km_comparison, exact=TRUE)[[2]])
+    
+    # knm_kld <- unname(kldivergence(knm_baseline, knm_comparison))
+    knm_kst <- unname(ks.test(knm_baseline, knm_comparison, exact=TRUE)[[2]])
+    # df <- bind_rows(df, tibble(col, km_kld, km_kst, knm_kld, knm_kst))
+    df <- bind_rows(df, tibble(col, km_kst, knm_kst))
+  }
+  # print("DONE WITH ITERATION")
+  write_csv(df, paste0("DISTR_SHIFT_1", filename))
+}
+
+```
+
+
+
