@@ -4,7 +4,7 @@ from solepaircompare import SolePairCompare
 from util import METADATA, METADATA_BLURRY, METADATA_OOD, OPP_FOOT
 
 
-def process_image(Q_file, K_file, mated, partial_type="full", folder_path="Pristine_AN/"):
+def process_image(Q_file, K_file, mated, partial_type="full", folder_path="./data/Pristine_AN/"):
     Q = Sole(folder_path + Q_file, border_width=160)
     K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
@@ -121,7 +121,7 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="Prist
 
     return row
 
-def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="OOD/"):
+def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="./data/Pristine_150/"):
     if folder_path == "OOD/" and mated == False:
         Q = Sole(folder_path + Q_file, border_width=160, flipped=True)
         q_foot = OPP_FOOT[Q_file[7:8]]
@@ -240,7 +240,7 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path="O
 
     return row
 
-def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path="Blurry/"):
+def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path="./data/Blurry/"):
     Q = Sole(folder_path + Q_file, border_width=160)
     K = Sole(folder_path + K_file, border_width=160)
     pair = SolePair(Q, K, mated=mated)
