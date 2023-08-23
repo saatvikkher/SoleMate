@@ -11,7 +11,7 @@ class SolePairCompare:
     '''
     SolePairCompare will take two shoeprint images (Q and K) and eventually 
     outputs the collection of similarity metrics comparing Q and K including 
-    variations of percent overlap and overlap, metrics based on clustering, 
+    variations of proportion overlap and overlap, metrics based on clustering, 
     metrics based on the closest point in the other shoe, metrics based on 
     phase-only correlation, and image-based metrics. SolePairCompare initializes
     the comparison class by aligning the two shoeprints in the given pair.
@@ -41,7 +41,7 @@ class SolePairCompare:
             shift_up (bool): try the up random-start in ICP implementation
             shift_down (bool): try the down random-start in ICP implementation
             two_way (bool): try aliging the shoes Q over K and K over Q in ICP
-            icp_overlap_threshold (float): threshold for calculating percent 
+            icp_overlap_threshold (float): threshold for calculating proportion 
                 overlap when determing the best alignment direction
         '''
 
@@ -49,7 +49,7 @@ class SolePairCompare:
         icp_downsample_rates.sort()
             
         best_icp_downsample_rate = None
-        best_percent_overlap = -1
+        best_propn_overlap = -1
 
         for icp_downsample_rate in icp_downsample_rates:
             self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=icp_downsample_rate,
@@ -65,12 +65,12 @@ class SolePairCompare:
             self._K_coords = self._K_coords.sample(frac=downsample_rate, 
                                                    random_state=random_seed)
             
-            # Check the percent overlap of this icp_downsample_rate
-            po = self.percent_overlap()
+            # Check the proportion overlap of this icp_downsample_rate
+            po = self.propn_overlap()
 
-            # Choose the higher percent overlap as the better ICP 
-            if po > best_percent_overlap:
-                best_percent_overlap = po
+            # Choose the higher proportion overlap as the better ICP 
+            if po > best_propn_overlap:
+                best_propn_overlap = po
                 best_icp_downsample_rate = icp_downsample_rate
 
         # Short circuit: if the best_icp_downsample_rate equals the last
@@ -87,8 +87,8 @@ class SolePairCompare:
             self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
             self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
 
-        # The percent of original K that will be kept
-        self.K_keep_percent = 1.0
+        # The proportion of original K that will be kept
+        self.K_keep_propn = 1.0
         self.pair = pair
         self.random_seed = random_seed
     
@@ -187,11 +187,11 @@ class SolePairCompare:
                         return True
         return False
 
-    def percent_overlap(self, Q_as_base=True, threshold=3):
+    def propn_overlap(self, Q_as_base=True, threshold=3):
         '''
         (Similarity metric) 
 
-        Calculates the percent of points in the base shoeprint (determined by
+        Calculates the proportion of points in the base shoeprint (determined by
         Q_as_base) that overlap with points in the other shoeprint.
 
         Inputs: 
@@ -476,7 +476,7 @@ class SolePairCompare:
         # Change n_clusters according to how many points are
         # in k_coords_cut relative to k_coords, if the cut has been made.
         # If no cut has been made, n_clusters will not change.
-        n_clusters = round(self.K_keep_percent * n_clusters)
+        n_clusters = round(self.K_keep_propn * n_clusters)
 
         hcluster_centroids = self._hierarchical_cluster(
             Q_coords_ds, n_clusters=n_clusters)
@@ -543,7 +543,7 @@ class SolePairCompare:
             K_keep = self.K_coords
 
         self.K_coords = K_keep
-        self.K_keep_percent = len(K_keep) / len(self.K_coords)
+        self.K_keep_propn = len(K_keep) / len(self.K_coords)
 
     def _dataframe_to_image(self, df, max_x, max_y):
         '''

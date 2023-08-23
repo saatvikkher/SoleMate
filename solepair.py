@@ -164,9 +164,9 @@ class SolePair():
             shifts.append((0, range))
 
         best_T = None
-        best_percent_overlap = -1
+        best_propn_overlap = -1
         best_shift = None
-        # record apply_to_k for the transformation that got the best percent overlap
+        # record apply_to_k for the transformation that got the best proportion overlap
         best_apply_to_k = None
 
         for shift in shifts:
@@ -174,7 +174,7 @@ class SolePair():
             self.K.coords.loc[:, "x"] += shift[0]
             self.K.coords.loc[:, "y"] += shift[1]
 
-            T, percent_overlap, apply_to_k = self._icp_helper(max_iterations=max_iterations,
+            T, propn_overlap, apply_to_k = self._icp_helper(max_iterations=max_iterations,
                                                               tolerance=tolerance,
                                                               downsample_rate=downsample_rate,
                                                               random_seed=random_seed,
@@ -182,8 +182,8 @@ class SolePair():
                                                               overlap_threshold=overlap_threshold)
 
             # Percent overlap: higher the better
-            if percent_overlap > best_percent_overlap:
-                best_percent_overlap = percent_overlap
+            if propn_overlap > best_propn_overlap:
+                best_propn_overlap = propn_overlap
                 best_T = T
                 best_shift = shift
                 best_apply_to_k = apply_to_k
@@ -237,11 +237,11 @@ class SolePair():
         '''
         This is a helper function for performing ICP registration. This function 
         performs ICP between the Q and K shoeprint point-clouds. If two_way is 
-        true, it calculates the percent overlap of points with tolerance 
+        true, it calculates the proportion overlap of points with tolerance 
         threshold overlap_threshold for performing ICP moving Q to K and moving 
         K to Q. It then selects and returns the best version of the ICP 
         implementaiton. The returns include the best transformation matrix, the 
-        corresponding percent overlap, and the corresponding direction.  
+        corresponding proportion overlap, and the corresponding direction.  
 
         Inputs:
             max_iterations (int): The maximum number of iterations for ICP. 
@@ -276,7 +276,7 @@ class SolePair():
                                     tolerance=tolerance)
 
         # Calculate proportion overlap based on the ICP of moving K to Q
-        percent_overlap_kq = np.sum(
+        propn_overlap_kq = np.sum(
             distances_kq <= overlap_threshold) / num_samples
 
         apply_to_k = True
@@ -292,15 +292,15 @@ class SolePair():
                 k_pts, self._transform(q_pts, T_qk))
 
             # Calculate proportion overlap of ICP on K to Q
-            percent_overlap_qk = np.sum(
+            propn_overlap_qk = np.sum(
                 distances_qk_k_as_base <= overlap_threshold) / num_samples
 
             # Choose the better proportion overlap (higher is better)
-            if percent_overlap_qk > percent_overlap_kq:
+            if propn_overlap_qk > propn_overlap_kq:
                 apply_to_k = False
-                return T_qk, percent_overlap_qk, apply_to_k
+                return T_qk, propn_overlap_qk, apply_to_k
 
-        return T_kq, percent_overlap_kq, apply_to_k
+        return T_kq, propn_overlap_kq, apply_to_k
 
     def plot(self,
              size: float = 0.1,
