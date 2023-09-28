@@ -407,7 +407,6 @@ class SolePairCompare:
         Returns: 
             (float): within cluster variation computation
         '''
-        print(centroids)
         centroids_arr = centroids.to_numpy()
         numerator = 0
         for i in range(n_clusters):
