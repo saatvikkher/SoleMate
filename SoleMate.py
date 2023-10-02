@@ -491,21 +491,21 @@ def main():
                     # Phase Correlation
                     st.subheader("Phase Correlation")
                     col1, col2 = st.columns(2)
+                    # with col1:
+                    #     peak_value = plt.figure(figsize=(10, 7))
+                    #     sns.kdeplot(data=dataset, x="peak_value", hue="mated",
+                    #                 fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                    #                 )
+                    #     # TODO: Fix this
+                    #     plt.axvline(x=phase_correlation_metrics['peak_value'], color='#C86914',
+                    #                 linestyle='--', linewidth=3)
+                    #     # plt.text(phase_correlation_metrics['peak_value'], 0, 'Test Pair', verticalalignment='bottom',
+                    #     #          horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    #     plt.title("Peak Value")
+                    #     plt.xlim((-50, 600))
+                    #     st.pyplot(peak_value)
+                    #     plt.close(peak_value)
                     with col1:
-                        peak_value = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="peak_value", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        # TODO: Fix this
-                        plt.axvline(x=phase_correlation_metrics['peak_value'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        # plt.text(phase_correlation_metrics['peak_value'], 0, 'Test Pair', verticalalignment='bottom',
-                        #          horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Peak Value")
-                        plt.xlim((-50, 600))
-                        st.pyplot(peak_value)
-                        plt.close(peak_value)
-                    with col2:
                         PSR = plt.figure(figsize=(10, 7))
                         sns.kdeplot(data=dataset, x="PSR", hue="mated",
                                     fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
@@ -520,16 +520,15 @@ def main():
 
                     with st.expander(":bar_chart: About the metric: Phase Correlation"):
                         st.subheader("Phase Correlation")
-                        st.markdown("The Fourier transform is a mathematical too\
-                                    l that can be utilized for signal processing\
-                                     and image analysiWe perform phase correlation\
-                                     analysis using\
-                                     the full shoeprint image prior to edge dete\
-                                    ction. The transformation matrix calculated \
-                                    during ICP alignment is saved and used to al\
-                                    ign the full coordinates. In our implementat\
-                                    ionof phase correlation, we follow the algor\
-                                    ithm first implemented by Kuglin and Hines")
+                        st.markdown("The Fourier transform is a mathematical tool\
+                                    that can be utilized for signal processing\
+                                    and image analysis. We perform phase correlation\
+                                    analysis using the full shoeprint image prior to edge detection.\
+                                    The transformation matrix calculated \
+                                    during ICP alignment is saved and used to align\
+                                    the full coordinates. In our implementation\
+                                    of phase correlation, we follow the algorithm\
+                                     first implemented by Kuglin and Hines")
                         st.markdown("Peak value, corresponds to the maximum\
                                      value of the phase correlation matrix. PSR\
                                      reflects the relative strength of the phase\
