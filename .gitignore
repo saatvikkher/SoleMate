@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 *.tiff
 .DS_Store
+!static/*.tiff

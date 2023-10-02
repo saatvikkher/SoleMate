@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 
-METADATA = pd.read_csv("Pristine_AN/metadata.csv")
-METADATA_BLURRY = pd.read_csv("Blurry/metadata.csv")
-METADATA_OOD = pd.read_csv("OOD/metadata.csv")
+METADATA = pd.read_csv("data/Pristine_AN/metadata.csv")
+METADATA_BLURRY = pd.read_csv("data/Blurry/metadata.csv")
+METADATA_OOD = pd.read_csv("data/OOD/metadata.csv")
 BLACK_WHITE_THRESHOLD = 85  # Bottom third of grayscale: 255 / 3 = 85
 WILLIAMS_PURPLE = "#500082"
 WILLIAMS_GOLD = "#FFBE0A"
@@ -184,7 +184,7 @@ def _create_knm_pairs_for_blurry(df: pd.DataFrame, blur_level: int, name: str, r
     pairs_df['mated'] = False
     pairs_df.to_csv(name, index=False)
 
-def create_km_pairs_OOD(df, name: str):
+def _create_km_pairs_OOD(df, name: str):
     '''
     Creating known-mated pairs for out of distribution data. Mated pairs were 
     constructed with the same shoe number, same foot, and different replicate.
@@ -197,7 +197,7 @@ def create_km_pairs_OOD(df, name: str):
                 df.iloc[i].loc['Foot'] == df.iloc[j].loc['Foot'] and
                 df.iloc[i].loc['ID'] == df.iloc[j].loc['ID']
             ):
-                kms.append((df.iloc[i].loc['File Name'], df.iloc[j].loc['File Name']))
+                km.append((df.iloc[i].loc['File Name'], df.iloc[j].loc['File Name']))
                 break
 
     km_df = pd.DataFrame(km)
@@ -205,7 +205,7 @@ def create_km_pairs_OOD(df, name: str):
     km_df['mated'] = True
     km_df.to_csv(name, index=False)
 
-def create_knm_pairs_OOD(df, name: str, size: int = 2407):
+def _create_knm_pairs_OOD(df, name: str, size: int = 2407):
     '''
     Creating known-nonmated pairs for out of distribution data. Nonmated pairs
     were constructed with same shoe number but different foot. For each of the Q's
