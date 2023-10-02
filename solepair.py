@@ -7,7 +7,25 @@ from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 
 class SolePair():
-    def __init__(self, Q: Sole, K: Sole, mated: bool, aligned=False, T: np.ndarray = np.identity(3, int)) -> None:
+    '''
+    SolePair is a class that makes a pair of shoes. Shoeprint pairs must be 
+    input as "mated" or "non-mated". This class has functions to align shoeprint
+    pairs and plot both pairs at once.
+    '''
+    def __init__(self, Q: Sole, K: Sole, mated: bool, aligned=False, 
+                 T: np.ndarray = np.identity(3, int)) -> None:
+        '''
+        SolePairs are initialized as two Sole obejcts and a boolean operator to
+        designate the shoeprint pair as "mated" or "non-mated".
+
+        Inputs:
+            Q (Sole): Shoeprint Q
+            K (Sole): Shoeprint K
+            mated (bool): Whether or not Q and K are a mated pair
+            aligned (bool): Whether Q and K are pre-aligned. Defaults to False
+            T (np.ndarray): Transformation matrix to align K to Q, of shape 3x3. 
+                Defaults with the identity matrix.
+        '''
         self._Q = Q
         self._K = K
         self._mated = mated
@@ -16,33 +34,49 @@ class SolePair():
 
     @property
     def Q(self) -> Sole:
+        '''Getter function for Q Sole object '''
         return self._Q
 
     @property
     def K(self) -> Sole:
+        '''Getter function for K Sole object'''
         return self._K
 
     @property
     def mated(self) -> bool:
+        '''Getter function for mated boolean'''
         return self._mated
 
     @property
     def aligned(self) -> bool:
+        '''Getter function for aligned boolean'''
         return self._aligned
 
     @property
     def T(self) -> bool:
+        '''Getter function for the transformation matrix'''
         return self._T
 
     @aligned.setter
     def aligned(self, value: bool) -> None:
+        '''Setter method for aligned boolean'''
         self._aligned = value
 
     @T.setter
     def T(self, value: np.ndarray) -> None:
+        '''Setter method for the transformation matrix'''
         self._T = value
 
     def _equalize(self):
+        '''
+        Equalize is a helper function to the implementation of ICP. It selects 
+        points such that the shoeprint point-clouds of Q and K have an equal 
+        number of points.
+
+        Returns:
+            (pd.DataFrame)
+            (pd.DataFrame)
+        '''
         q_pts = np.array(self.Q.coords)
         k_pts = np.array(self.K.coords)
 
@@ -130,9 +164,9 @@ class SolePair():
             shifts.append((0, range))
 
         best_T = None
-        best_percent_overlap = -1
+        best_propn_overlap = -1
         best_shift = None
-        # record apply_to_k for the transformation that got the best percent overlap
+        # record apply_to_k for the transformation that got the best proportion overlap
         best_apply_to_k = None
 
         for shift in shifts:
@@ -140,7 +174,7 @@ class SolePair():
             self.K.coords.loc[:, "x"] += shift[0]
             self.K.coords.loc[:, "y"] += shift[1]
 
-            T, percent_overlap, apply_to_k = self._icp_helper(max_iterations=max_iterations,
+            T, propn_overlap, apply_to_k = self._icp_helper(max_iterations=max_iterations,
                                                               tolerance=tolerance,
                                                               downsample_rate=downsample_rate,
                                                               random_seed=random_seed,
@@ -148,8 +182,8 @@ class SolePair():
                                                               overlap_threshold=overlap_threshold)
 
             # Percent overlap: higher the better
-            if percent_overlap > best_percent_overlap:
-                best_percent_overlap = percent_overlap
+            if propn_overlap > best_propn_overlap:
+                best_propn_overlap = propn_overlap
                 best_T = T
                 best_shift = shift
                 best_apply_to_k = apply_to_k
@@ -195,17 +229,38 @@ class SolePair():
         return self.Q.coords, self.K.aligned_coordinates, self.Q.coords_full, self.K.aligned_full
 
     def _icp_helper(self, max_iterations: int = 10000,
-                    tolerance: float = 0.00001,
+                    tolerance: float = 1e-5,
                     downsample_rate: float = 1.0,
                     random_seed: int = 0,
                     two_way: bool = False,
                     overlap_threshold=3):
         '''
-        A helper function to ICP.
-        '''
-        q_pts, k_pts = self._equalize()
+        This is a helper function for performing ICP registration. This function 
+        performs ICP between the Q and K shoeprint point-clouds. If two_way is 
+        true, it calculates the proportion overlap of points with tolerance 
+        threshold overlap_threshold for performing ICP moving Q to K and moving 
+        K to Q. It then selects and returns the best version of the ICP 
+        implementaiton. The returns include the best transformation matrix, the 
+        corresponding proportion overlap, and the corresponding direction.  
 
-        # Downsample q_pts and k_pts
+        Inputs:
+            max_iterations (int): The maximum number of iterations for ICP. 
+                Default is 10000.
+            tolerance (float): Tolerance for ICP convergence. Default is 1e-5.
+            downsample_rate (float): Proportion of points used for ICP. Default 
+                is 1.0 (no downsampling).
+            random_seed (int): Default is 0.
+            two_way (bool): Performs two-way ICP comparison. Default is False.
+            overlap_trheshold: Threshold for proportion overlap. Default is 3.
+
+        Returns:
+            (np.ndarray): The transformation matrix aligning Q to K or K to Q
+            (float): the proportion overlap of the given transformation
+            (bool): Indicates whether the transformation should be applied to K 
+                (True) or to Q (False)
+        '''
+        # Equalize and downsample Q and K pointclouds for faster computation
+        q_pts, k_pts = self._equalize()
         np.random.seed(random_seed)
         num_samples = int(k_pts.shape[0] * downsample_rate)
         sample_indices_q = np.random.choice(
@@ -215,57 +270,64 @@ class SolePair():
         q_pts = q_pts[sample_indices_q]
         k_pts = k_pts[sample_indices_k]
 
+        # Perform ICP
         T_kq, distances_kq, _ = icp(k_pts, q_pts,
                                     max_iterations=max_iterations,
                                     tolerance=tolerance)
 
-        # Calculate percent overlap
-        percent_overlap_kq = np.sum(
+        # Calculate proportion overlap based on the ICP of moving K to Q
+        propn_overlap_kq = np.sum(
             distances_kq <= overlap_threshold) / num_samples
 
         apply_to_k = True
 
+        # Calculate ICP in both directions
         if two_way:
             T_qk, _, __ = icp(q_pts, k_pts,
                               max_iterations=max_iterations,
                               tolerance=tolerance)
 
-            # to keep the metric of comparing two icps consistent
+            # To keep the metric of comparing two icps consistent
             distances_qk_k_as_base, _ = nearest_neighbor(
                 k_pts, self._transform(q_pts, T_qk))
 
-            # Now, we have the distances_qk_k_as_base to calculate percent_overlap_qk
-            percent_overlap_qk = np.sum(
+            # Calculate proportion overlap of ICP on K to Q
+            propn_overlap_qk = np.sum(
                 distances_qk_k_as_base <= overlap_threshold) / num_samples
 
-            # percent_overlap -- higher the better.
-            if percent_overlap_qk > percent_overlap_kq:
+            # Choose the better proportion overlap (higher is better)
+            if propn_overlap_qk > propn_overlap_kq:
                 apply_to_k = False
-                return T_qk, percent_overlap_qk, apply_to_k
+                return T_qk, propn_overlap_qk, apply_to_k
 
-        return T_kq, percent_overlap_kq, apply_to_k
+        return T_kq, propn_overlap_kq, apply_to_k
 
     def plot(self,
              size: float = 0.1,
              aligned: bool = False,
-             color_q=WILLIAMS_GOLD,
-             color_k=WILLIAMS_PURPLE,
-             filename=None):
+             color_q = WILLIAMS_GOLD,
+             color_k = WILLIAMS_PURPLE,
+             filename = None):
         '''
-        Inputs:
-            aligned: (bool) indicating if you want to access the aligned image
-        '''
+        A function for plotting and saving the graph of shoeprint Q and 
+        shoeprint K. Shoeprint Q will always be on top.
 
+        Inputs:
+            size (float): The size of the dots on the plot of the image.
+            aligned (bool): Indicating if you want to access the aligned image.
+            color_q (str): A hex code for the color of shoeprint Q
+            color_k (str): A hex code for the color of shoeprint K 
+            filename (str): A name for saving the plot. If no name is given,
+                the plot will not be saved.
+        '''
         if aligned:
             plt.scatter(self.K.aligned_coordinates.x, self.K.aligned_coordinates.y,
                         s=size, label="Aligned K", color=color_k)
         else:
             plt.scatter(self.K.coords.x, self.K.coords.y,
                         s=size, label="K", color=color_k)
-        
         plt.scatter(self.Q.coords.x, self.Q.coords.y,
                     s=size, label="Q", color=color_q)
-
         plt.gca().set_aspect('equal')
         plt.legend()
 

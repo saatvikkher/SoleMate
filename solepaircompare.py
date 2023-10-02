@@ -11,7 +11,7 @@ class SolePairCompare:
     '''
     SolePairCompare will take two shoeprint images (Q and K) and eventually 
     outputs the collection of similarity metrics comparing Q and K including 
-    variations of percent overlap and overlap, metrics based on clustering, 
+    variations of proportion overlap and overlap, metrics based on clustering, 
     metrics based on the closest point in the other shoe, metrics based on 
     phase-only correlation, and image-based metrics. SolePairCompare initializes
     the comparison class by aligning the two shoeprints in the given pair.
@@ -41,7 +41,7 @@ class SolePairCompare:
             shift_up (bool): try the up random-start in ICP implementation
             shift_down (bool): try the down random-start in ICP implementation
             two_way (bool): try aliging the shoes Q over K and K over Q in ICP
-            icp_overlap_threshold (float): threshold for calculating percent 
+            icp_overlap_threshold (float): threshold for calculating proportion 
                 overlap when determing the best alignment direction
         '''
 
@@ -49,7 +49,7 @@ class SolePairCompare:
         icp_downsample_rates.sort()
             
         best_icp_downsample_rate = None
-        best_percent_overlap = -1
+        best_propn_overlap = -1
 
         for icp_downsample_rate in icp_downsample_rates:
             self._Q_coords, self._K_coords, self._Q_coords_full, self._K_coords_full = pair.icp_transform(downsample_rate=icp_downsample_rate,
@@ -65,12 +65,12 @@ class SolePairCompare:
             self._K_coords = self._K_coords.sample(frac=downsample_rate, 
                                                    random_state=random_seed)
             
-            # Check the percent overlap of this icp_downsample_rate
-            po = self.percent_overlap()
+            # Check the proportion overlap of this icp_downsample_rate
+            po = self.propn_overlap()
 
-            # Choose the higher percent overlap as the better ICP 
-            if po > best_percent_overlap:
-                best_percent_overlap = po
+            # Choose the higher proportion overlap as the better ICP 
+            if po > best_propn_overlap:
+                best_propn_overlap = po
                 best_icp_downsample_rate = icp_downsample_rate
 
         # Short circuit: if the best_icp_downsample_rate equals the last
@@ -87,25 +87,29 @@ class SolePairCompare:
             self._Q_coords = self._Q_coords.sample(frac=downsample_rate, random_state=random_seed)
             self._K_coords = self._K_coords.sample(frac=downsample_rate, random_state=random_seed)
 
-        # The percent of original K that will be kept
-        self.K_keep_percent = 1.0
+        # The proportion of original K that will be kept
+        self.K_keep_propn = 1.0
         self.pair = pair
         self.random_seed = random_seed
     
     @property
     def Q_coords(self) -> pd.DataFrame:
+        '''Getter method for Q dataframe of coordinates'''
         return self._Q_coords
 
     @property
     def K_coords(self) -> pd.DataFrame:
+        '''Getter method for K dataframe of coordinates'''
         return self._K_coords
 
     @property
     def Q_coords_full(self) -> pd.DataFrame:
+        '''Getter method for Q full dataframe of coordinates'''
         return self._Q_coords_full
 
     @property
     def K_coords_full(self) -> pd.DataFrame:
+        '''Getter method for K full dataframe of coordinates'''
         return self._K_coords_full
     
     @Q_coords.setter
@@ -120,12 +124,12 @@ class SolePairCompare:
 
     @Q_coords.setter
     def Q_coords_full(self, value) -> None:
-        '''Setter method for Q dataframe of coordinates'''
+        '''Setter method for Q full dataframe of coordinates'''
         self._Q_coords_full = value
     
     @K_coords.setter
     def K_coords_full(self, value) -> None:
-        '''Setter method for K dataframe of coordinates'''
+        '''Setter method for K full dataframe of coordinates'''
         self._K_coords_full = value
 
     def _df_to_hash(self, df):
@@ -178,16 +182,16 @@ class SolePairCompare:
         for potential_x in range(x-threshold, x+threshold+1):
             for potential_y in range(y-threshold, y+threshold+1):
                 if potential_x in ht and potential_y in ht[potential_x]:
-                    # also check whether the potential point is within threshold
+                    # check whether the potential point is within threshold
                     if get_dist([x, y], [potential_x, potential_y]) <= threshold:
                         return True
         return False
 
-    def percent_overlap(self, Q_as_base=True, threshold=3):
+    def propn_overlap(self, Q_as_base=True, threshold=3):
         '''
         (Similarity metric) 
 
-        Calculates the percent of points in the base shoeprint (determined by
+        Calculates the proportion of points in the base shoeprint (determined by
         Q_as_base) that overlap with points in the other shoeprint.
 
         Inputs: 
@@ -231,7 +235,6 @@ class SolePairCompare:
                     "0.25", "0.5", "0.75", "0.9", "kurtosis" and values of float
                     type
         '''
-
         # If Q_as_base == True, Q is the shoe we sample from
         if Q_as_base:
             df1 = self.K_coords
@@ -278,7 +281,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       metric='euclidean')
+                                                       affinity='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
@@ -373,9 +376,17 @@ class SolePairCompare:
 
         return rmse
 
-    def _cluster_var(self, df: pd.DataFrame, centroid: pd.DataFrame) -> float:
+    def _cluster_var(self, df: pd.DataFrame, centroid: np.ndarray) -> float:
         '''
-        Cluster 
+        Calculates the sum of distances squared for a singular cluster.
+
+        Inputs:
+            df (pd.DataFrame): The shoeprint point-cloud without labels for clusters.
+            centroid (np.ndarray): The centroids to compare distances to
+
+        Returns:
+            (float): The sum of squared distances between data points in a 
+                cluster and its centroid
         '''
         df_arr = df.to_numpy()
         distance = np.linalg.norm(df_arr - centroid, axis=1)
@@ -384,6 +395,18 @@ class SolePairCompare:
         return sum_distance_squared
 
     def _within_cluster_var(self, df: pd.DataFrame, centroids: pd.DataFrame, n_clusters: int):
+        '''
+        Calculate the average within-cluster variation across all clusters.
+
+        Inputs:
+            df (pd.DataFrame): The point-cloud data frame with cluster labels
+            centroids (pd.DataFrame): A dataframe with n_clusters rows and x,y
+                coordinates corresponding to the cluster number
+            n_clusters (int): The number of clusters
+        
+        Returns: 
+            (float): within cluster variation computation
+        '''
         centroids_arr = centroids.to_numpy()
         numerator = 0
         for i in range(n_clusters):
@@ -393,13 +416,57 @@ class SolePairCompare:
         wvc = numerator / df.shape[0]
         return wvc
 
-    def _within_cluster_var_metric(self, df_Q: pd.DataFrame, df_K: pd.DataFrame, centroids_Q, centroids_K, n_clusters):
+    def _within_cluster_var_metric(self, df_Q: pd.DataFrame, df_K: pd.DataFrame, centroids_Q: pd.DataFrame, 
+                                   centroids_K: pd.DataFrame, n_clusters: int):
+        '''
+        Combines the within-cluster-variation of Q and K into one metric by 
+        taking the difference between the within-cluster-variation of Q and K 
+        and normalizing by the within-cluster-variation of Q.
+
+        Inputs:
+            df_Q (pd.DataFrame): the point-cloud of Q with cluster labels
+            df_K (pd.DataFrame): the point-cloud of K with cluster labels
+            centroids_Q (pd.DataFrame): dataframe of x,y coordinates of the centroids of clusters in Q
+            centroids_K (pd.DataFrame): dataframe of x,y coordinates of the centroids of clusters in K
+            n_clusters (int): the number of clusters
+
+        Returns:
+            (float): the within-cluster-variation metric
+        '''
         wcv_Q = self._within_cluster_var(df_Q, centroids_Q, n_clusters)
         wcv_K = self._within_cluster_var(df_K, centroids_K, n_clusters)
         wcv_metric = (wcv_Q - wcv_K) / wcv_Q
         return wcv_metric
 
     def cluster_metrics(self, n_clusters: int = 20, downsample_rate=0.2, n_points_per_cluster=None):
+        '''
+        Executes clustering then computes similarity metrics based on clustering.
+
+        We compute clustering deterministically by using hierarchical clustering on shoeprint Q.
+        Then, the centroids from hierarchical clustering are then used as starting points for 
+        k-means clustering in Q. These centroids are then used for k-means clustering in K. We 
+        then compare these results to obtain similarity metrics based on clustering. Clustering 
+        size can be determined by using a fixed number of clusters regardless of point-cloud 
+        size, or choosing how big each cluster can be.
+
+        Metrics include:
+            Centroid Distance: The rmse of distances between corresponding 
+                centroids.
+            Cluster Proportion: The rmse of cluster proportions.
+            Iterations K: The number of iterations it took to converge from the 
+                Q centroids to k-means clustering in K.
+            Within-Cluster-Variation Ratio: The ratio of within cluster 
+                variation between Q and K.
+
+        Inputs:
+            n_clusters (int): the number of clusters, defaults to 20
+            downsample_rate (float): rate of downsample to speed up clustering, defaults to 0.2
+            n_points_per_cluster (int or None): number of points per cluster if points-per-cluster 
+                are used, defaults to None (cluster number will be determineed by n_clsuters)
+        
+        Returns:
+            (dict): dictionary containing similarity metrics based on clustering
+        '''
         Q_coords_ds = self.Q_coords.sample(
             frac=downsample_rate, random_state=self.random_seed)
         K_coords_ds = self.K_coords.sample(
@@ -407,11 +474,12 @@ class SolePairCompare:
 
         # Change n_clusters according to how many points are
         # in k_coords_cut relative to k_coords, if the cut has been made.
-        n_clusters = round(self.K_keep_percent * n_clusters)
+        # If no cut has been made, n_clusters will not change.
+        n_clusters = round(self.K_keep_propn * n_clusters)
 
         hcluster_centroids = self._hierarchical_cluster(
             Q_coords_ds, n_clusters=n_clusters)
-        q_kmeans_centroids, q_df_labels, q_kmeans = self._kmeans_cluster(df=Q_coords_ds,
+        q_kmeans_centroids, q_df_labels, _ = self._kmeans_cluster(df=Q_coords_ds,
                                                                          init=hcluster_centroids,
                                                                          n_clusters=n_clusters)
 
@@ -438,12 +506,17 @@ class SolePairCompare:
 
     def cut_k(self, partial_type, side):
         '''
-        Suppose Q is a partial print
+        Suppose Q is a simulated partial print. This function will cut K based 
+        on the way Q is cut. This function modifies the coordinates of K in 
+        place and has no returns.
+
+        Inputs:
+            partial_type (str): The type of cut Q is.
+            side (str): Whether Q and K are right ('R') or left ('L') shoeprints.
         '''
-
-        assert side in ['R', 'L']
         assert partial_type in ['toe', 'heel', 'inside', 'outside', 'full']
-
+        assert side in ['R', 'L']
+        
         max_x = max(self.Q_coords.x)
         min_x = min(self.Q_coords.x)
         max_y = max(self.Q_coords.y)
@@ -469,7 +542,7 @@ class SolePairCompare:
             K_keep = self.K_coords
 
         self.K_coords = K_keep
-        self.K_keep_percent = len(K_keep) / len(self.K_coords)
+        self.K_keep_propn = len(K_keep) / len(self.K_coords)
 
     def _dataframe_to_image(self, df, max_x, max_y):
         '''
@@ -487,8 +560,12 @@ class SolePairCompare:
         '''
         max_x_int = int(math.ceil(max_x))
         max_y_int = int(math.ceil(max_y))
-        image = np.zeros((max_y_int + 1, max_x_int + 1))  # Dimensions based on max x and y coordinates
-        image[df['y'].round().astype(int), df['x'].round().astype(int)] = 255  # Set the points to 255 (white) for visualization
+
+        # Dimensions based on max x and y coordinates
+        image = np.zeros((max_y_int + 1, max_x_int + 1)) 
+
+        # Set the points to 255 (white) for visualization
+        image[df['y'].round().astype(int), df['x'].round().astype(int)] = 255  
         return image
 
     def _phase_only_correlation(self, image1, image2):
@@ -524,19 +601,16 @@ class SolePairCompare:
         correlation coefficient.
 
         Inputs:
-            image1: np.ndarray
-            image2: np.ndarray
+            image1 (np.ndarray): first shoeprint image
+            image2 (np.ndarray): second shoeprint image
 
         Returns:
-            tuple(float)
+            tuple(float): similarity metrics
         '''
+        # Compute phase correlation and align images
         phase_correlation = self._phase_only_correlation(image1, image2)
-
-        # Find the peak position
         peak_position = np.unravel_index(np.argmax(phase_correlation), 
                                          phase_correlation.shape)
-
-        # Align the images based on the peak position
         aligned_image2 = np.roll(image2, -np.array(peak_position), axis=(0, 1))
 
         # Mean Squared Error (MSE)
@@ -549,20 +623,17 @@ class SolePairCompare:
         psr = np.max(phase_correlation) / np.mean(phase_correlation)
 
         # Normalized Correlation Coefficient
-        NCC = np.corrcoef(image1.ravel(), 
-                                              aligned_image2.ravel())[0, 1]
+        NCC = np.corrcoef(image1.ravel(), aligned_image2.ravel())[0, 1]
         
-        # Stuff we don't know how to explain yet
+        # Peak Value
         peak_value = np.max(phase_correlation)
-        
-        # peak_position = np.unravel_index(np.argmax(phase_correlation), 
-        # phase_correlation.shape)
+
         return peak_value, mse, ssim_index, psr, NCC
 
     def pc_metrics(self):
         '''
         Performs phase-correlation calculations and retrieves phase correlation
-        metrics.
+        metrics as well as similarity metrics computed using the entire shoeprint image.
 
         Returns:
             (dict): a dictionary object containing all the pc metrics
