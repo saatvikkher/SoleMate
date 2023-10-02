@@ -6,7 +6,7 @@
   <h1 align="center">SoleMate</h1>
 </div>
 
-A python package for shoeprint matching.
+Official implementation of *"Improving and Evaluating Machine Learning Methods for Forensic Shoeprint Matching"*.
 
 Try it out at [SoleMate.streamlit.app](https://solemate.streamlit.app/)
 
@@ -24,7 +24,6 @@ Try it out at [SoleMate.streamlit.app](https://solemate.streamlit.app/)
 Before you begin, make sure you have the following software installed:
 
 - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-- *any other prerequisite...*
 
 ### Installation
 
@@ -34,7 +33,7 @@ Before you begin, make sure you have the following software installed:
    ```
 2. Install required dependencies
    ```sh
-   conda env create -f environment.yml
+   conda create --name solemate --file requirements.txt
    ```
 3. Activate the environment
    ```sh
@@ -74,13 +73,8 @@ sc.percent_overlap() # Calculate Percent Overlap metrics
 sc.pc_metrics() # Calculate Phase-correlation metrics such as peak value, MSE, correlation coefficient
 sc.jaccard_index() # Jaccard similarity coefficient
 sc.cluster_metrics() # Clustering-based metrics
+sc.pc_metrics() # Phase Correlation metrics
 ```
-
-
-## References
-1. ...
-2. ...
-3. ...
 
 
 *Developed and maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, and Ashley Zheng.*
