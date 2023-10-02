@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
   <a href="https://github.com/saatvikkher/SoleMate/blob/main/logo.png">
-    <img src="logo.png" alt="Logo" width="120" height="120">
+    <img src="static/logo.png" alt="Logo" width="120" height="120">
   </a>
   <h1 align="center">SoleMate</h1>
 </div>

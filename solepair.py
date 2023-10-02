@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sole import Sole
-from icp import icp, nearest_neighbor
-from util import WILLIAMS_PURPLE, WILLIAMS_GOLD
+from utils.icp import icp, nearest_neighbor
+from utils.util import WILLIAMS_PURPLE, WILLIAMS_GOLD
 
 
 class SolePair():

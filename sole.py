@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import PIL.ImageOps
 from PIL import Image, ImageFilter
-from util import BLACK_WHITE_THRESHOLD, WILLIAMS_PURPLE
+from utils.util import BLACK_WHITE_THRESHOLD, WILLIAMS_PURPLE
 
 class Sole:
     '''

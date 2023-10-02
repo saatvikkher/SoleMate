@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from process_util import process_image
 from sole import Sole
 from solepair import SolePair
 from solepaircompare import SolePairCompare
@@ -9,29 +8,29 @@ import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
-from util import WILLIAMS_GOLD, WILLIAMS_PURPLE
+from utils.util import WILLIAMS_GOLD, WILLIAMS_PURPLE
 import pickle
 import zipfile
 
 
 @st.cache_data
 def load_baseline_train():
-    return pd.read_csv("examples/BASELINE_TRAIN.csv")
+    return pd.read_csv("static/BASELINE_TRAIN.csv")
 
 @st.cache_data
 def load_everything_train():
-    return pd.read_csv("examples/COMBINED_TRAIN.csv")
+    return pd.read_csv("static/COMBINED_TRAIN.csv")
 
 @st.cache_resource
 def load_baseline_model():
-    with open('examples/BASELINE_TO_EVERYTHING.pkl', 'rb') as p:
+    with open('static/BASELINE_TO_EVERYTHING.pkl', 'rb') as p:
         return pickle.load(p)
     
 @st.cache_resource
 def load_everything_model():
-    with zipfile.ZipFile("examples/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
-        zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", "examples/")
-    with open('examples/EVERYTHING_TO_EVERYTHING_NOIND.pkl', 'rb') as p:
+    with zipfile.ZipFile("static/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
+        zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", "static/")
+    with open('static/EVERYTHING_TO_EVERYTHING_NOIND.pkl', 'rb') as p:
         return pickle.load(p)
 
 
@@ -73,23 +72,23 @@ def main():
                             ('None', 'Mated Pair #1', 'Mated Pair #2',
                              'Non-Mated Pair #1', 'Non-Mated Pair #2'))
         if pair == 'Mated Pair #1':
-            Q_file = "example_shoeprints/mated_2_q.tiff"
-            K_file = "example_shoeprints/mated_2_k.tiff"
+            Q_file = "static/mated_2_q.tiff"
+            K_file = "static/mated_2_k.tiff"
             q_border_width = 160
             k_border_width = 160
         elif pair == 'Mated Pair #2':
-            Q_file = "example_shoeprints/mated_1_q.tiff"
-            K_file = "example_shoeprints/mated_1_k.tiff"
+            Q_file = "static/mated_1_q.tiff"
+            K_file = "static/mated_1_k.tiff"
             q_border_width = 160
             k_border_width = 160
         elif pair == 'Non-Mated Pair #1':
-            Q_file = "example_shoeprints/nonmated_2_q.tiff"
-            K_file = "example_shoeprints/nonmated_2_k.tiff"
+            Q_file = "static/nonmated_2_q.tiff"
+            K_file = "static/nonmated_2_k.tiff"
             q_border_width = 160
             k_border_width = 160
         elif pair == 'Non-Mated Pair #2':
-            Q_file = "example_shoeprints/nonmated_1_q.tiff"
-            K_file = "example_shoeprints/nonmated_1_k.tiff"
+            Q_file = "static/nonmated_1_q.tiff"
+            K_file = "static/nonmated_1_k.tiff"
             q_border_width = 160
             k_border_width = 160
         else:
@@ -113,11 +112,12 @@ def main():
     with col1:
         _, c2, _ = st.columns([1, 3, 1])
         with c2:
-            st.image("logo.png")
+            st.image("static/logo.png")
     with col2:
         st.title("SoleMate")
-        st.subheader("An End-To-End System for Shoeprint Pattern Matching")
-        st.markdown("Williams College SMALL REU 2023")
+        st.subheader("An End-To-End System for Forensic Shoeprint Matching")
+        st.markdown("Official implementation of \"Improving and Evaluating Machine Learning Methods for Forensic Shoeprint Matching\". ")
+
 
     st.divider()
 

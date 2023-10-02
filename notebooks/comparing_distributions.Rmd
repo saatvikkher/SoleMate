@@ -1,0 +1,142 @@
+---
+title: "kl_divergence"
+output: pdf_document
+date: "2023-07-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("/Users/lena2/Desktop/SMALL-stat/SoleMate")
+library(dplyr)
+library(tidyverse)
+library(philentropy)
+library(broom)
+library(glue)
+library(ggplot2)
+library(dgof)
+library(FNN)
+library(sfsmisc)
+```
+
+```{r}
+# import files
+# all are data from 7/14/23
+result_baseline_train <- read_csv("/Users/lena2/Desktop/SMALL-stat/SoleMate/Jul14_results/RESULT_BASELINE_TRAIN.csv", show_col_types = FALSE)
+```
+
+```{r}
+kldivergence <- function(df1, df2){
+    df1_count = length(df1)
+    df2_count = length(df2)
+    # put them into bins
+    bin_max = max(df1, df2)
+    n_bins <- 500
+    bin_labels <- seq(0, bin_max, by= bin_max/n_bins)
+    
+
+    df1_bin_counts <- cut(df1, breaks = bin_labels, include.lowest = TRUE, labels = FALSE)
+    df2_bin_counts <- cut(df2, breaks=bin_labels, include.lowest=TRUE, labels=FALSE)
+    
+    df1_count_vector <- table(df1_bin_counts)
+    df2_count_vector <- table(df2_bin_counts)
+
+    p_df1 <- numeric(n_bins)
+    p_df2 <- numeric(n_bins)
+    p_df1[as.integer(names(df1_count_vector))] <- as.integer(df1_count_vector)/df1_count
+    p_df2[as.integer(names(df2_count_vector))] <- as.integer(df2_count_vector)/df2_count
+
+    distr <- rbind(p_df1, p_df2)
+    kld <- KL(distr, unit='log')
+    
+    return(kld)
+}
+```
+
+```{r}
+overlap_proportion <- function(df1, df2){
+  lower <- min(c(df1, df2)) - 1 
+  upper <- max(c(df1, df2)) + 1
+  
+  d1 <- density(df1, from=lower, to=upper)
+  d2 <- density(df2, from=lower, to=upper)
+  d <- data.frame(x=d1$x, a=d1$y, b=d2$y)
+  
+  d$w <- pmin(d$a, d$b)
+
+  total <- integrate.xy(d$x, d$a) + integrate.xy(d$x, d$b)
+  intersection <- integrate.xy(d$x, d$w)
+  
+  overlap <- (2*intersection) / total
+  
+  return(overlap)
+}
+```
+
+```{r}
+mated <- result_baseline_train %>%
+  filter(mated) %>%
+  select(mean) %>%
+  pull() %>%
+  as.numeric()
+
+nonmated <- result_baseline_train %>%
+  filter(!mated) %>%
+  select(mean) %>%
+  pull() %>%
+  as.numeric()
+
+# kld = kldivergence(mated, nonmated)
+
+print(kldivergence(mated, nonmated))
+
+kld <- kldivergence(mated, nonmated)
+kldivergence(nonmated, mated)
+# ks.test(mated, nonmated)
+```
+
+```{r}
+folderpath <- "/Users/lena2/Desktop/SMALL-stat/SoleMate/Jul14_results"
+
+filenames <- list.files(folderpath)
+
+for (filename in filenames){
+  file <- read_csv(paste0(folderpath, "/", filename), show_col_types = FALSE)
+  cols <-colnames(file)
+  
+  df <- data.frame()
+  for (col in cols[15:52]){
+    print(col)
+    mated <- file %>%
+    filter(mated) %>%
+    select(col) %>%
+    pull() %>%
+    as.numeric()
+    
+    nonmated <- file %>%
+    filter(!mated) %>%
+    select(col) %>%
+    pull() %>%
+    as.numeric()
+    
+
+    kld1 <- unname(kldivergence(mated, nonmated))
+    kld2 <- unname(kldivergence(nonmated, mated))
+    kst <- unname(ks.test(nonmated, mated)[[1]])
+    df <- bind_rows(df, as.tibble(col, kld1, kld2, kst))
+  }
+  # print("DONE WITH ITERATION")
+  write_csv(df, paste0("STATS_", filename))
+}
+
+```
+
+```{r}
+
+```
+
+
+
+
