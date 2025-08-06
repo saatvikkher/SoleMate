@@ -20,7 +20,7 @@ class Sole:
 
     def __init__(self,
                  image_path: str = None,
-                 border_width: int = 0,
+                 border_width: int = 1,
                  is_image: bool = True,
                  coords: pd.DataFrame = None,
                  flipped: bool = False) -> None:
@@ -129,8 +129,12 @@ class Sole:
 
         # extract image dimensions and crop image
         image_height, image_width = np.array(inv).shape
-        crop = inv.crop((border_width, border_width, image_width-border_width,
-                         image_height-border_width))
+
+        # fix issue of the image border being treated as an edge
+        if border_width == 0:
+            crop = inv.crop((1, 1, image_width-1, image_height-1))
+        else:     
+            crop = inv.crop((border_width, border_width, image_width-border_width, image_height-border_width))
         crop_arr = np.array(crop)
         
         # crop image for the non-edge-detection shoeprint

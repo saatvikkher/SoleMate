@@ -134,7 +134,7 @@ def main():
                 the left, or select a preset example shoeprint pair. If the\
                 uploaded images come with a frame or ruler, designate the width\
                 of the border in pixels. Click the \"Run SoleMate\" button to\
-                run the algorithm and see the results!")
+                run the algorithm and see the results! Ensure the prints are dark colored on a light background and adjust the border width (how much of the border to crop out) as necessary. For the Everspry Outsole Scanner, 160 pixels is the proper border width.")
 
     with st.expander(":athletic_shoe: Introduction to shoeprint pattern matching"):
         st.subheader("Shoeprint Pattern Matching")

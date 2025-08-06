@@ -6,9 +6,9 @@
   <h1 align="center">SoleMate</h1>
 </div>
 
-Official implementation of *"Improving and Evaluating Machine Learning Methods for Forensic Shoeprint Matching"*.
+Official implementation of *"Improving and Evaluating Machine Learning Methods for Forensic Shoeprint Matching"*
 
-Try it out at [SoleMate.streamlit.app](https://solemate.streamlit.app/)
+Try it out at [solemate.streamlit.app](https://solemate.streamlit.app/)
 
 <!-- 
 ### Deliverables
@@ -18,6 +18,7 @@ Try it out at [SoleMate.streamlit.app](https://solemate.streamlit.app/)
  -->
  
 ## Getting Started
+See `demo.ipynb` for a pipeline walkthrough.
 
 ### Prerequisites
 
@@ -29,7 +30,7 @@ Before you begin, make sure you have the following software installed:
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/saatvikkher/SoleMate
+   git clone https://github.com/saatvikkher/SoleMate.git
    ```
 2. Install required dependencies
    ```sh
@@ -39,46 +40,25 @@ Before you begin, make sure you have the following software installed:
    ```sh
    conda activate solemate
    ```
-## Usage
 
-Create Soles
-```python
-Q = Sole("path/to/image")
-K = Sole("path/to/image")
+## Datasets
+To grow and evaluate our model, we use data from three sources within CSAFE:
+1. Their [public longitudinal shoe outsole impression dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/). These data correspond to our Pristine AN (Baseline), Partial, and Pristine Time 2 and 3 prints.
+2. Their [public 2D footware dataset](https://forensicstats.org/2d-footwear-data-set/). These data correspond to our Pristine 150 prints.
+3. Their degraded / blurry print dataset, created in ["The effect of image descriptors on the performance of classifiers of footwear outsole image pairs"](https://doi.org/10.1016/j.forsciint.2021.111126). Available upon request to the authors. These data correspond to our Blurry prints.
 
-Q.plot()
-K.plot()
-```
-Create a SolePair
-```python
-pair = SolePair(Q, K, mated=True)
-pair.plot()
-```
+## Random forest growth
+Following our approach, you can reproduce the growth of our model via the script `grow_solemate_model.py`, which generates a random forest trained on the previously extracted similarity metrics found in `results/` and saves the model to `solemate_model.joblib`.
 
-Align a SolePair
-```python
-sc = SolePairCompare(pair, 
-                     icp_downsample_rates=[0.05],
-                     shift_up=True,
-                     shift_down=True,
-                     shift_left=True,
-                     shift_right=True,
-                     two_way=True) # icp is called here
-pair.plot(aligned=True)
+## Similarity Metric Extraction
+To extract fresh similarity metrics from a directory of images, see the script `extract-solemate-metrics-pipeline.py` and the function `parseArgs()` for a description of important command line arguments.
+
+## Model Predictions
+To get probability of matedness (that both prints came from the same shoe) for pairs, use `get_model_predictions.py` which expects a `solemate_model.joblib` model. This can be run like:
 ```
-Generate metrics
-```python
-sc.min_dist() # Calculate Euclidean Distance metrics
-sc.percent_overlap() # Calculate Percent Overlap metrics
-sc.pc_metrics() # Calculate Phase-correlation metrics such as peak value, MSE, correlation coefficient
-sc.jaccard_index() # Jaccard similarity coefficient
-sc.cluster_metrics() # Clustering-based metrics
-sc.pc_metrics() # Phase Correlation metrics
+python get_model_predictions.py --metrics_fp results/RESULT_BASELINE_TEST.csv --output_fp model_predictions
 ```
 
-
-*Developed and maintained by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Yufeng Wu, and Ashley Zheng.*
+*Developed by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Myer Liebman, Simon Socolow, Charlie Theras, Yufeng Wu, and Ashley Zheng.*
 
 *We conducted our research in collaboration with the [Center for Statistics and Applications in Forensic Evidence](https://forensicstats.org/).*
-
-
