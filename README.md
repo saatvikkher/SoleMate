@@ -62,3 +62,5 @@ python get_model_predictions.py --metrics_fp results/RESULT_BASELINE_TEST.csv --
 *Developed by Simon Angoluan, Divij Jain, Saatvik Kher, Lena Liang, Myer Liebman, Simon Socolow, Charlie Theras, Yufeng Wu, and Ashley Zheng.*
 
 *We conducted our research in collaboration with the [Center for Statistics and Applications in Forensic Evidence](https://forensicstats.org/).*
+
+*This work was funded by Williams College Science Center and by the National Science Foundation (NSF) via the Williams College SMALL Undergraduate Research Project through grants DMS2241623 and DMS1947438. This work was also partially funded by the Center for Statistics and Applications in Forensic Evidence (CSAFE) through Cooperative Agreements 70NANB15H176 and 70NANB20H019 between NIST and Iowa State University, which includes activities carried out at Carnegie Mellon University, Duke University, University of California Irvine, University of Virginia, West Virginia University, University of Pennsylvania, Swarthmore College and University of Nebraska, Lincoln.*
