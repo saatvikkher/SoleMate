@@ -632,7 +632,7 @@ def main():
     st.markdown(
         "We conducted our research in collaboration with the [Center for Statistics and Applications in Forensic Evidence](https://forensicstats.org/).")
     st.markdown(
-        "This work was funded by Williams College Science Center and by the National Science Foundation (NSF) via the Williams College SMALL \ 
+        "This work was funded by Williams College Science Center and by the National Science Foundation via the Williams College SMALL \ 
         Undergraduate Research Project through grants DMS2241623 and DMS1947438. This work was also partially funded by the Center for Statistics and \ 
         Applications in Forensic Evidence through Cooperative Agreements 70NANB15H176 and 70NANB20H019 between NIST and Iowa State University, \
         which includes activities carried out at Carnegie Mellon University, Duke University, University of California Irvine, University of Virginia, \ 
