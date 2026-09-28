@@ -281,7 +281,7 @@ class SolePairCompare:
         df_arr = df.to_numpy()
         df_label = df.copy(deep=True)
         hierarchical_cluster = AgglomerativeClustering(n_clusters=n_clusters,
-                                                       affinity='euclidean')
+                                                       metric='euclidean')
         df_label['label'] = hierarchical_cluster.fit_predict(df_arr)
         centroids = pd.DataFrame(columns=['x', 'y'])
         for i in range(n_clusters):
@@ -617,7 +617,7 @@ class SolePairCompare:
         mse = np.mean((image1 - aligned_image2) ** 2)
 
         # Structural Similarity Index (SSIM)
-        ssim_index, _ = ssim(image1, aligned_image2, full=True)
+        ssim_index, _ = ssim(image1, aligned_image2, full=True, data_range=255.0)
 
         # Peak-to-Sidelobe Ratio (PSR)
         psr = np.max(phase_correlation) / np.mean(phase_correlation)
