@@ -655,5 +655,4 @@ if __name__ == "__main__":
     </style>
     '''
     st.markdown(css, unsafe_allow_html=True)
-    st.set_option('deprecation.showPyplotGlobalUse', False)
     main()
