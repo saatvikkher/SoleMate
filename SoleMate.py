@@ -607,7 +607,7 @@ def main():
                     f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
                 st.markdown("A summary of all the metrics we calculated:")
                 st.dataframe(row)
-                st.markdown(f"RF posterior probability: **{prob}**")
+                st.markdown(f"RF classification score: **{prob}**")
 
                 with st.expander(":question: What is random forest?"):
                     st.subheader("Random Forest")
