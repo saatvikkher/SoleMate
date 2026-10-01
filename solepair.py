@@ -262,7 +262,18 @@ class SolePair():
         # Equalize and downsample Q and K pointclouds for faster computation
         q_pts, k_pts = self._equalize()
         np.random.seed(random_seed)
+
+        # Guard: the downsample rate must leave at least 1 point, or ICP
+        # receives empty arrays and sklearn crashes with a cryptic error.
         num_samples = int(k_pts.shape[0] * downsample_rate)
+        if num_samples < 1 or q_pts.shape[0] < 1:
+            raise ValueError(
+                f"Not enough points for ICP: downsample rate {downsample_rate} "
+                f"leaves {num_samples} of {k_pts.shape[0]} K points "
+                f"(Q has {q_pts.shape[0]}). Use a larger downsample rate or a "
+                f"clearer print with more detected points."
+            )
+
         sample_indices_q = np.random.choice(
             q_pts.shape[0], num_samples, replace=False)
         sample_indices_k = np.random.choice(

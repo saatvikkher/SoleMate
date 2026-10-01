@@ -169,17 +169,23 @@ def main():
             st.divider()
             # Check if both images are uploaded
             if Q_file and K_file:
-                Q = Sole(Q_file, border_width=q_border_width)
-                K = Sole(K_file, border_width=k_border_width)
-                pair = SolePair(Q, K, True)
+                try:
+                    Q = Sole(Q_file, border_width=q_border_width)
+                    K = Sole(K_file, border_width=k_border_width)
+                    pair = SolePair(Q, K, True)
 
-                # ICP
-                st.header("ICP Alignment")
-                st.markdown(
-                    "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
-                with st.spinner("Aligning soles..."):
-                    sc = SolePairCompare(pair, icp_downsample_rates=[0.05], two_way=True, shift_left=True,
-                                         shift_right=True, shift_down=True, shift_up=True)
+                    # ICP
+                    st.header("ICP Alignment")
+                    st.markdown(
+                        "We calculate the best rigid body transformation to align the K shoeprint to the Q shoeprint.")
+                    with st.spinner("Aligning soles..."):
+                        sc = SolePairCompare(pair, icp_downsample_rates=[0.05], two_way=True, shift_left=True,
+                                             shift_right=True, shift_down=True, shift_up=True)
+                except ValueError as e:
+                    st.error(
+                        f"**Could not run the analysis on these inputs.** "
+                        f"{e}")
+                    st.stop()
                 K_down = K.coords.sample(frac=0.1)
                 K_al_down = K.aligned_coordinates.sample(frac=0.1)
                 Q_down = Q.coords.sample(frac=0.1)
@@ -603,8 +609,8 @@ def main():
                                 different shoes of the same make, model, and size to\
                                 simulate similar shoes with different randomly\
                                 acquired characteristics. We trained our random\
-                                forest on 70\% of these data and tested it with the\
-                                remaining completely independent 30\% (i.e., no\
+                                forest on 70\\% of these data and tested it with the\
+                                remaining completely independent 30\\% (i.e., no\
                                 image appears in both the training and test set).\
                                 See the variable importance of the random forest\
                                 model below.")
