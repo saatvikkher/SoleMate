@@ -1,3 +1,11 @@
+import os
+import sys
+
+# Make imports work both as a package module (utils.process) and as a
+# script run from inside utils/.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from sole import Sole
 from solepair import SolePair
 from solepaircompare import SolePairCompare
@@ -101,20 +109,20 @@ def process_image(Q_file, K_file, mated, partial_type="full", folder_path="./dat
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
-    row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
-    row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
+    row['q_pct_threshold_1'] = sc.propn_overlap(Q_as_base=True, threshold=1)
+    row['k_pct_threshold_1'] = sc.propn_overlap(Q_as_base=False, threshold=1)
 
-    row['q_pct_threshold_2'] = sc.percent_overlap(Q_as_base=True, threshold=2)
-    row['k_pct_threshold_2'] = sc.percent_overlap(Q_as_base=False, threshold=2)
+    row['q_pct_threshold_2'] = sc.propn_overlap(Q_as_base=True, threshold=2)
+    row['k_pct_threshold_2'] = sc.propn_overlap(Q_as_base=False, threshold=2)
 
-    row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
-    row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+    row['q_pct_threshold_3'] = sc.propn_overlap(Q_as_base=True, threshold=3)
+    row['k_pct_threshold_3'] = sc.propn_overlap(Q_as_base=False, threshold=3)
 
-    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
-    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+    row['q_pct_threshold_5'] = sc.propn_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.propn_overlap(Q_as_base=False, threshold=5)
 
-    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
-    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
+    row['q_pct_threshold_10'] = sc.propn_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.propn_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
@@ -220,20 +228,20 @@ def process_image_OOD(Q_file, K_file, mated, partial_type="full", folder_path=".
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
-    row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
-    row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
+    row['q_pct_threshold_1'] = sc.propn_overlap(Q_as_base=True, threshold=1)
+    row['k_pct_threshold_1'] = sc.propn_overlap(Q_as_base=False, threshold=1)
 
-    row['q_pct_threshold_2'] = sc.percent_overlap(Q_as_base=True, threshold=2)
-    row['k_pct_threshold_2'] = sc.percent_overlap(Q_as_base=False, threshold=2)
+    row['q_pct_threshold_2'] = sc.propn_overlap(Q_as_base=True, threshold=2)
+    row['k_pct_threshold_2'] = sc.propn_overlap(Q_as_base=False, threshold=2)
 
-    row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
-    row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+    row['q_pct_threshold_3'] = sc.propn_overlap(Q_as_base=True, threshold=3)
+    row['k_pct_threshold_3'] = sc.propn_overlap(Q_as_base=False, threshold=3)
 
-    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
-    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+    row['q_pct_threshold_5'] = sc.propn_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.propn_overlap(Q_as_base=False, threshold=5)
 
-    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
-    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
+    row['q_pct_threshold_10'] = sc.propn_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.propn_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
@@ -338,20 +346,20 @@ def process_image_blurry(Q_file, K_file, mated, partial_type="full", folder_path
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
-    row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
-    row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
+    row['q_pct_threshold_1'] = sc.propn_overlap(Q_as_base=True, threshold=1)
+    row['k_pct_threshold_1'] = sc.propn_overlap(Q_as_base=False, threshold=1)
 
-    row['q_pct_threshold_2'] = sc.percent_overlap(Q_as_base=True, threshold=2)
-    row['k_pct_threshold_2'] = sc.percent_overlap(Q_as_base=False, threshold=2)
+    row['q_pct_threshold_2'] = sc.propn_overlap(Q_as_base=True, threshold=2)
+    row['k_pct_threshold_2'] = sc.propn_overlap(Q_as_base=False, threshold=2)
 
-    row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
-    row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+    row['q_pct_threshold_3'] = sc.propn_overlap(Q_as_base=True, threshold=3)
+    row['k_pct_threshold_3'] = sc.propn_overlap(Q_as_base=False, threshold=3)
 
-    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
-    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+    row['q_pct_threshold_5'] = sc.propn_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.propn_overlap(Q_as_base=False, threshold=5)
 
-    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
-    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
+    row['q_pct_threshold_10'] = sc.propn_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.propn_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
@@ -455,20 +463,20 @@ def process_image_unoptimized(Q_file, K_file, mated, partial_type="full", folder
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 100, n_points_per_cluster=100))
     row.update(sc.cluster_metrics(n_clusters = len(sc.Q_coords) // 1000, n_points_per_cluster=1000))
 
-    row['q_pct_threshold_1'] = sc.percent_overlap(Q_as_base=True, threshold=1)
-    row['k_pct_threshold_1'] = sc.percent_overlap(Q_as_base=False, threshold=1)
+    row['q_pct_threshold_1'] = sc.propn_overlap(Q_as_base=True, threshold=1)
+    row['k_pct_threshold_1'] = sc.propn_overlap(Q_as_base=False, threshold=1)
 
-    row['q_pct_threshold_2'] = sc.percent_overlap(Q_as_base=True, threshold=2)
-    row['k_pct_threshold_2'] = sc.percent_overlap(Q_as_base=False, threshold=2)
+    row['q_pct_threshold_2'] = sc.propn_overlap(Q_as_base=True, threshold=2)
+    row['k_pct_threshold_2'] = sc.propn_overlap(Q_as_base=False, threshold=2)
 
-    row['q_pct_threshold_3'] = sc.percent_overlap(Q_as_base=True, threshold=3)
-    row['k_pct_threshold_3'] = sc.percent_overlap(Q_as_base=False, threshold=3)
+    row['q_pct_threshold_3'] = sc.propn_overlap(Q_as_base=True, threshold=3)
+    row['k_pct_threshold_3'] = sc.propn_overlap(Q_as_base=False, threshold=3)
 
-    row['q_pct_threshold_5'] = sc.percent_overlap(Q_as_base=True, threshold=5)
-    row['k_pct_threshold_5'] = sc.percent_overlap(Q_as_base=False, threshold=5)
+    row['q_pct_threshold_5'] = sc.propn_overlap(Q_as_base=True, threshold=5)
+    row['k_pct_threshold_5'] = sc.propn_overlap(Q_as_base=False, threshold=5)
 
-    row['q_pct_threshold_10'] = sc.percent_overlap(Q_as_base=True, threshold=10)
-    row['k_pct_threshold_10'] = sc.percent_overlap(Q_as_base=False, threshold=10)
+    row['q_pct_threshold_10'] = sc.propn_overlap(Q_as_base=True, threshold=10)
+    row['k_pct_threshold_10'] = sc.propn_overlap(Q_as_base=False, threshold=10)
 
     row.update(sc.pc_metrics())
     row.update(sc.jaccard_index())
