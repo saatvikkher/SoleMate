@@ -579,7 +579,7 @@ def main():
                     f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
                 st.markdown("A summary of all the metrics we calculated:")
                 st.dataframe(row)
-                st.markdown(f"RF posterior probability: **{prob}**")
+                st.markdown(f"RF classification score: **{prob}**")
 
                 with st.expander(":question: What is random forest?"):
                     st.subheader("Random Forest")
@@ -601,6 +601,7 @@ def main():
 
                 with st.expander(":technologist: Our random forest implementation"):
                     st.subheader("Our Random Forest Implementation")
+<<<<<<< HEAD
                     st.markdown("We trained our random forest on data from \
                                 [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).\
                                 To create known mated pairs, we selected different\
@@ -614,6 +615,20 @@ def main():
                                 image appears in both the training and test set).\
                                 See the variable importance of the random forest\
                                 model below.")
+=======
+                    st.markdown("""We trained our random forest on data from 
+                                [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).
+                                To create known mated pairs, we selected different
+                                to create non-mated pairs, we selected scans from
+                                different shoes of the same make, model, and size to
+                                simulate similar shoes with different randomly
+                                acquired characteristics. We trained our random
+                                forest on 70% of these data and tested it with the
+                                remaining completely independent 30% (i.e., no
+                                image appears in both the training and test set).
+                                See the variable importance of the random forest
+                                model below.""")
+>>>>>>> 8359c16dc3914155a778c6598da346df32ac5ea4
                     # Variable importance plot for random forest
                     importances = rf_model.feature_importances_
                     feature_names = ['distance '+metric if metric in ['0.1', '0.25', '0.5', '0.75',
