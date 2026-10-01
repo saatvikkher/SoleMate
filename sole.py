@@ -130,6 +130,15 @@ class Sole:
         # extract image dimensions and crop image
         image_height, image_width = np.array(inv).shape
 
+        # Guard: the crop box must be a valid rectangle. Newer Pillow versions
+        # raise a cryptic error for inverted boxes — fail with guidance instead.
+        if image_width - 2 * border_width <= 0 or image_height - 2 * border_width <= 0:
+            raise ValueError(
+                f"Border width ({border_width}px) is too large for this image "
+                f"({image_width}x{image_height}px). Choose a border width smaller "
+                f"than half the image's smaller side (or 0 if there is no border)."
+            )
+
         # fix issue of the image border being treated as an edge
         if border_width == 0:
             crop = inv.crop((1, 1, image_width-1, image_height-1))
@@ -147,6 +156,18 @@ class Sole:
         crop_arr_full = crop_arr_full < BLACK_WHITE_THRESHOLD
         rows, cols = np.where(crop_arr)
         rows_full, cols_full = np.where(crop_arr_full)
+
+        # Guard: the print must actually be detected in the image. An empty
+        # point cloud fails much later in ICP with a cryptic sklearn error.
+        if rows.size < 20:
+            raise ValueError(
+                f"Could not detect a shoeprint in '{link}' — only {rows.size} "
+                f"point(s) found after edge detection and thresholding "
+                f"(threshold={BLACK_WHITE_THRESHOLD}). Make sure the print is "
+                f"dark on a light background, and adjust the border width or "
+                f"image contrast if needed."
+            )
+
         df = pd.DataFrame({"x": rows, "y": cols})
         df_full = pd.DataFrame({"x": rows_full, "y": cols_full})
 
