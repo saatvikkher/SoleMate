@@ -619,6 +619,7 @@ def main():
                     st.markdown("""We trained our random forest on data from 
                                 [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).
                                 To create known mated pairs, we selected different
+                                scans from the same shoe taken at the same time, and
                                 to create non-mated pairs, we selected scans from
                                 different shoes of the same make, model, and size to
                                 simulate similar shoes with different randomly
