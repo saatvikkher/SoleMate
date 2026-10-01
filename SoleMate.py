@@ -9,8 +9,16 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils.util import WILLIAMS_GOLD, WILLIAMS_PURPLE
+from PIL import Image
 import pickle
 import zipfile
+
+# Exceptions a user upload can realistically trigger: corrupt/truncated
+# images (UnidentifiedImageError is an OSError), decompression bombs
+# (inherits Exception directly, so listed explicitly), and ValueError
+# from the pipeline's own guards.
+UPLOAD_ERRORS = (ValueError, OSError, MemoryError,
+                 Image.DecompressionBombError)
 
 
 @st.cache_data
@@ -28,9 +36,17 @@ def load_baseline_model():
     
 @st.cache_resource
 def load_everything_model():
-    with zipfile.ZipFile("static/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
-        zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", "static/")
-    with open('static/EVERYTHING_TO_EVERYTHING_NOIND.pkl', 'rb') as p:
+    # Extract to a temp dir instead of static/: the static dir may be
+    # read-only on deployed (cloud) filesystems, and a fresh cache miss on
+    # every restart otherwise re-writes 165MB into the repo directory.
+    import tempfile, os
+    target_dir = os.path.join(tempfile.gettempdir(), "solemate_model")
+    os.makedirs(target_dir, exist_ok=True)
+    pkl_path = os.path.join(target_dir, "EVERYTHING_TO_EVERYTHING_NOIND.pkl")
+    if not os.path.exists(pkl_path):
+        with zipfile.ZipFile("static/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
+            zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", target_dir)
+    with open(pkl_path, 'rb') as p:
         return pickle.load(p)
 
 
@@ -167,8 +183,10 @@ def main():
     if Q_file and K_file:
         if st.sidebar.button("Run SoleMate", type='primary'):
             st.divider()
-            # Check if both images are uploaded
-            if Q_file and K_file:
+            # Check if both images are uploaded. NB: an empty (0-byte) upload
+            # is falsy (UploadedFile subclasses BytesIO), so `if Q_file and
+            # K_file` would silently disable Run for corrupt empty files.
+            if Q_file is not None and K_file is not None:
                 try:
                     Q = Sole(Q_file, border_width=q_border_width)
                     K = Sole(K_file, border_width=k_border_width)
@@ -181,7 +199,7 @@ def main():
                     with st.spinner("Aligning soles..."):
                         sc = SolePairCompare(pair, icp_downsample_rates=[0.05], two_way=True, shift_left=True,
                                              shift_right=True, shift_down=True, shift_up=True)
-                except ValueError as e:
+                except UPLOAD_ERRORS as e:
                     st.error(
                         f"**Could not run the analysis on these inputs.** "
                         f"{e}")
@@ -223,322 +241,328 @@ def main():
 
                 st.divider()
 
-                with st.spinner("Calculating metrics..."):
-                    # Metrics
-                    q_pct_threshold_3 = sc.propn_overlap()
-                    k_pct_threshold_3 = sc.propn_overlap(Q_as_base=False)
-                    dist_metrics = sc.min_dist()
-                    all_cluster_metrics = sc.cluster_metrics(n_clusters=20)
-                    all_cluster_metrics.update(sc.cluster_metrics(n_clusters=100))
-                    phase_correlation_metrics =sc.pc_metrics()
+                try:
+                    with st.spinner("Calculating metrics..."):
+                        # Metrics
+                        q_pct_threshold_3 = sc.propn_overlap()
+                        k_pct_threshold_3 = sc.propn_overlap(Q_as_base=False)
+                        dist_metrics = sc.min_dist()
+                        all_cluster_metrics = sc.cluster_metrics(n_clusters=20)
+                        all_cluster_metrics.update(sc.cluster_metrics(n_clusters=100))
+                        phase_correlation_metrics = sc.pc_metrics()
+                except UPLOAD_ERRORS as e:
+                    st.error(
+                        f"**Could not compute the similarity metrics for these "
+                        f"inputs.** {e}")
+                    st.stop()
 
-                    st.header("Metrics")
-                    st.markdown("We quantify similarity between shoeprints\
-                                using a number of metrics. The dotted line\
-                                represents where in the distribution the metric\
-                                computed from the input shoeprint pair lies.")
+                st.header("Metrics")
+                st.markdown("We quantify similarity between shoeprints\
+                            using a number of metrics. The dotted line\
+                            represents where in the distribution the metric\
+                            computed from the input shoeprint pair lies.")
 
-                    # Overlap
-                    st.subheader("Overlap")
-                    if model_type == 'Pristine AN (Baseline) Model':
-                        dataset = load_baseline_train()
-                        rf_model = load_baseline_model()
-                    else:
-                        dataset = load_everything_train()
-                        rf_model = load_everything_model()
+                # Overlap
+                st.subheader("Overlap")
+                if model_type == 'Pristine AN (Baseline) Model':
+                    dataset = load_baseline_train()
+                    rf_model = load_baseline_model()
+                else:
+                    dataset = load_everything_train()
+                    rf_model = load_everything_model()
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        q_pct = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="q_pct_threshold_3", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=q_pct_threshold_3, color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(q_pct_threshold_3, -0.25, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Q Percent Overlap")
-                        st.pyplot(q_pct)
-                        plt.close(q_pct)
-                    with col2:
-                        k_pct = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="k_pct_threshold_3", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=k_pct_threshold_3, color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(k_pct_threshold_3, -0.25, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("K Percent Overlap")
-                        st.pyplot(k_pct)
-                        plt.close(k_pct)
+                col1, col2 = st.columns(2)
+                with col1:
+                    q_pct = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="q_pct_threshold_3", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=q_pct_threshold_3, color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(q_pct_threshold_3, -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Q Percent Overlap")
+                    st.pyplot(q_pct)
+                    plt.close(q_pct)
+                with col2:
+                    k_pct = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="k_pct_threshold_3", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=k_pct_threshold_3, color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(k_pct_threshold_3, -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("K Percent Overlap")
+                    st.pyplot(k_pct)
+                    plt.close(k_pct)
 
-                    with st.expander(":bar_chart: About the metric: Overlap"):
-                        st.subheader("Percent Overlap")
-                        st.markdown("Percent overlap is the proportion of points in one\
-                                    shoeprint that are within three pixels of the other\
-                                    shoeprint after alignment. We observe the overlap\
-                                    in both directions— that is, K on Q and Q on K. A\
-                                    high percent overlap indicates a higher likelihood\
-                                    of the shoeprints originating from a mated pair. We\
-                                    set the threshold at 3 pixels for this example.")
+                with st.expander(":bar_chart: About the metric: Overlap"):
+                    st.subheader("Percent Overlap")
+                    st.markdown("Percent overlap is the proportion of points in one\
+                                shoeprint that are within three pixels of the other\
+                                shoeprint after alignment. We observe the overlap\
+                                in both directions— that is, K on Q and Q on K. A\
+                                high percent overlap indicates a higher likelihood\
+                                of the shoeprints originating from a mated pair. We\
+                                set the threshold at 3 pixels for this example.")
 
-                    # Distance
+                # Distance
+                st.subheader("Closest Point Distances")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    mean = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="mean", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['mean'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Mean CP Distance")
+                    plt.xlim((-5, 50))
+                    st.pyplot(mean)
+                    plt.close(mean)
+                with col2:
+                    std = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="std", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['std'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Standard Deviation CP Distance")
+                    plt.xlim((-5, 50))
+                    st.pyplot(std)
+                    plt.close(std)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    p10 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="0.1", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.1'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("10th Percentile CP Distance")
+                    plt.xlim((-0.25, 3))
+                    st.pyplot(p10)
+                    plt.close(p10)
+                with col2:
+                    p25 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="0.25", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.25'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("25th Percentile CP Distance")
+                    plt.xlim((-0.5, 10))
+                    st.pyplot(p25)
+                    plt.close(p25)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    p50 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="0.5", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.5'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Median CP Distance")
+                    plt.xlim((-2, 30))
+                    st.pyplot(p50)
+                    plt.close(p50)
+                with col2:
+                    p75 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="0.75", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.75'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("75th Percentile CP Distance")
+                    plt.xlim((-5, 70))
+                    st.pyplot(p75)
+                    plt.close(p75)
+
+                __, col2, __ = st.columns([1, 2, 1])
+                with col2:
+                    p90 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="0.9", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=dist_metrics['0.9'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("90th Percentile CP Distance")
+                    plt.xlim((-10, 150))
+                    st.pyplot(p90)
+                    plt.close(p90)
+
+                with st.expander(":bar_chart: About the metric: Closest Point Distances"):
                     st.subheader("Closest Point Distances")
+                    st.markdown("To compute closest point distance metrics, we\
+                                first measure and record the distance between each\
+                                point in the Q shoeprint to the closest point in\
+                                the aligned K shoeprint. Once we have distances\
+                                corresponding to each point in Q, we summarize\
+                                their distribution with the following metrics:\
+                                mean, median, standard deviation, 10th percentile,\
+                                25th percentile, 75th percentile, and 90th\
+                                percentile. For each of these metrics, the smaller\
+                                the magnitude, the more likely the shoeprint pair\
+                                is mated.")
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        mean = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="mean", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['mean'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['mean'], -0.015, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Mean CP Distance")
-                        plt.xlim((-5, 50))
-                        st.pyplot(mean)
-                        plt.close(mean)
-                    with col2:
-                        std = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="std", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['std'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['std'], -0.0075, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Standard Deviation CP Distance")
-                        plt.xlim((-5, 50))
-                        st.pyplot(std)
-                        plt.close(std)
+                # Clustering
+                st.subheader("Clustering")
+                col1, col2 = st.columns(2)
+                with col1:
+                    centroid_distance = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="centroid_distance_n_clusters_20", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=all_cluster_metrics['centroid_distance_n_clusters_20'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(all_cluster_metrics['centroid_distance_n_clusters_20'], -0.001, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Centroid Distance")
+                    plt.xlim((-50, 600))
+                    st.pyplot(centroid_distance)
+                    plt.close(centroid_distance)
+                with col2:
+                    cluster_proprtion = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="cluster_proportion_n_clusters_20", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=all_cluster_metrics['cluster_proportion_n_clusters_20'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(all_cluster_metrics['cluster_proportion_n_clusters_20'], -5, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Cluster Proportion")
+                    st.pyplot(cluster_proprtion)
+                    plt.close(cluster_proprtion)
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        p10 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="0.1", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['0.1'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['0.1'], -0.15, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("10th Percentile CP Distance")
-                        plt.xlim((-0.25, 3))
-                        st.pyplot(p10)
-                        plt.close(p10)
-                    with col2:
-                        p25 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="0.25", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['0.25'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['0.25'], -0.075, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("25th Percentile CP Distance")
-                        plt.xlim((-0.5, 10))
-                        st.pyplot(p25)
-                        plt.close(p25)
+                col1, col2 = st.columns(2)
+                with col1:
+                    iterations_k_n_clusters_20 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="iterations_k_n_clusters_20", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=all_cluster_metrics['iterations_k_n_clusters_20'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(all_cluster_metrics['iterations_k_n_clusters_20'], -0.004, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Iterations K")
+                    st.pyplot(iterations_k_n_clusters_20)
+                    plt.close(iterations_k_n_clusters_20)
+                with col2:
+                    wcv_ratio_n_clusters_20 = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="wcv_ratio_n_clusters_20", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=all_cluster_metrics['wcv_ratio_n_clusters_20'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(all_cluster_metrics['wcv_ratio_n_clusters_20'], -0.25, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Within Cluster Variation")
+                    plt.xlim((-2, 0.5))
+                    st.pyplot(wcv_ratio_n_clusters_20)
+                    plt.close(wcv_ratio_n_clusters_20)
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        p50 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="0.5", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['0.5'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['0.5'], -0.025, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Median CP Distance")
-                        plt.xlim((-2, 30))
-                        st.pyplot(p50)
-                        plt.close(p50)
-                    with col2:
-                        p75 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="0.75", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['0.75'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['0.75'], -0.01, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("75th Percentile CP Distance")
-                        plt.xlim((-5, 70))
-                        st.pyplot(p75)
-                        plt.close(p75)
-
-                    __, col2, __ = st.columns([1, 2, 1])
-                    with col2:
-                        p90 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="0.9", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=dist_metrics['0.9'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(dist_metrics['0.9'], -0.005, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("90th Percentile CP Distance")
-                        plt.xlim((-10, 150))
-                        st.pyplot(p90)
-                        plt.close(p90)
-
-                    with st.expander(":bar_chart: About the metric: Closest Point Distances"):
-                        st.subheader("Closest Point Distances")
-                        st.markdown("To compute closest point distance metrics, we\
-                                    first measure and record the distance between each\
-                                    point in the Q shoeprint to the closest point in\
-                                    the aligned K shoeprint. Once we have distances\
-                                    corresponding to each point in Q, we summarize\
-                                    their distribution with the following metrics:\
-                                    mean, median, standard deviation, 10th percentile,\
-                                    25th percentile, 75th percentile, and 90th\
-                                    percentile. For each of these metrics, the smaller\
-                                    the magnitude, the more likely the shoeprint pair\
-                                    is mated.")
-
-                    # Clustering
+                with st.expander(":bar_chart: About the metric: Clustering"):
                     st.subheader("Clustering")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        centroid_distance = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="centroid_distance_n_clusters_20", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=all_cluster_metrics['centroid_distance_n_clusters_20'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(all_cluster_metrics['centroid_distance_n_clusters_20'], -0.001, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Centroid Distance")
-                        plt.xlim((-50, 600))
-                        st.pyplot(centroid_distance)
-                        plt.close(centroid_distance)
-                    with col2:
-                        cluster_proprtion = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="cluster_proportion_n_clusters_20", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=all_cluster_metrics['cluster_proportion_n_clusters_20'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(all_cluster_metrics['cluster_proportion_n_clusters_20'], -5, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Cluster Proportion")
-                        st.pyplot(cluster_proprtion)
-                        plt.close(cluster_proprtion)
-
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        iterations_k_n_clusters_20 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="iterations_k_n_clusters_20", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=all_cluster_metrics['iterations_k_n_clusters_20'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(all_cluster_metrics['iterations_k_n_clusters_20'], -0.004, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Iterations K")
-                        st.pyplot(iterations_k_n_clusters_20)
-                        plt.close(iterations_k_n_clusters_20)
-                    with col2:
-                        wcv_ratio_n_clusters_20 = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="wcv_ratio_n_clusters_20", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=all_cluster_metrics['wcv_ratio_n_clusters_20'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(all_cluster_metrics['wcv_ratio_n_clusters_20'], -0.25, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Within Cluster Variation")
-                        plt.xlim((-2, 0.5))
-                        st.pyplot(wcv_ratio_n_clusters_20)
-                        plt.close(wcv_ratio_n_clusters_20)
-
-                    with st.expander(":bar_chart: About the metric: Clustering"):
-                        st.subheader("Clustering")
-                        st.markdown("Calculating our clustering metrics relies on two\
-                                    different clustering algorithms. Hierarchical\
-                                    clustering requires a predetermined number of\
-                                    clusters, k, and a linkage function. We opt to use\
-                                    the Ward linkage function which minimizes the\
-                                    variance of the Euclidean distances between points\
-                                    within each of the k clusters. k-means clustering,\
-                                    on the other hand, is initialized with the\
-                                    coordinates of cluster centroids. Using these\
-                                    centroid coordinates as a prototype, the k-means\
-                                    algorithm minimizes the within-cluster\
-                                    sum-of-squares (known as inertia) to find as many\
-                                    clusters as centroid coordinates were inputted.")
-                        st.markdown("Our implementation of clustering begins with\
-                                    hierarchical clustering on the Q shoeprint, and we\
-                                    return the centroids of the clusters created. We\
-                                    then use these centroids to initialize k-means\
-                                    clusters once again on the Q shoeprint. The\
-                                    clusters change slightly, so we return the updated\
-                                    cluster centroids. We then run k-means clustering\
-                                    on the K shoeprint with these centroids. We use the\
-                                    similarities between the k-means clusters of Q and\
-                                    K to quantify the similarity between the two\
-                                    shoeprints. Our measures of similarity are the root\
-                                    mean squared of the differences between cluster\
-                                    sizes as a proportion of the number of points in\
-                                    the entire print, the root mean squared of the\
-                                    distances between the centroids of clusters in Q\
-                                    and the corresponding updated centroids of the\
-                                    clusters in K, the difference between the within-cluster\
-                                    variation in Q and K scaled by the within-cluster\
-                                    variation in Q, and the number of\
-                                    iterations k-means clustering took to find clusters\
-                                    in K. For each of the clustering metrics,\
-                                    smaller magnitudes are indicative of mated pairs.\
-                                    We set the number of clusters to 20 for this example.")
+                    st.markdown("Calculating our clustering metrics relies on two\
+                                different clustering algorithms. Hierarchical\
+                                clustering requires a predetermined number of\
+                                clusters, k, and a linkage function. We opt to use\
+                                the Ward linkage function which minimizes the\
+                                variance of the Euclidean distances between points\
+                                within each of the k clusters. k-means clustering,\
+                                on the other hand, is initialized with the\
+                                coordinates of cluster centroids. Using these\
+                                centroid coordinates as a prototype, the k-means\
+                                algorithm minimizes the within-cluster\
+                                sum-of-squares (known as inertia) to find as many\
+                                clusters as centroid coordinates were inputted.")
+                    st.markdown("Our implementation of clustering begins with\
+                                hierarchical clustering on the Q shoeprint, and we\
+                                return the centroids of the clusters created. We\
+                                then use these centroids to initialize k-means\
+                                clusters once again on the Q shoeprint. The\
+                                clusters change slightly, so we return the updated\
+                                cluster centroids. We then run k-means clustering\
+                                on the K shoeprint with these centroids. We use the\
+                                similarities between the k-means clusters of Q and\
+                                K to quantify the similarity between the two\
+                                shoeprints. Our measures of similarity are the root\
+                                mean squared of the differences between cluster\
+                                sizes as a proportion of the number of points in\
+                                the entire print, the root mean squared of the\
+                                distances between the centroids of clusters in Q\
+                                and the corresponding updated centroids of the\
+                                clusters in K, the difference between the within-cluster\
+                                variation in Q and K scaled by the within-cluster\
+                                variation in Q, and the number of\
+                                iterations k-means clustering took to find clusters\
+                                in K. For each of the clustering metrics,\
+                                smaller magnitudes are indicative of mated pairs.\
+                                We set the number of clusters to 20 for this example.")
                     
-                    # Phase Correlation
-                    st.subheader("Phase Correlation")
-                    col1, col2 = st.columns(2)
-                    # with col1:
-                    #     peak_value = plt.figure(figsize=(10, 7))
-                    #     sns.kdeplot(data=dataset, x="peak_value", hue="mated",
-                    #                 fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                    #                 )
-                    #     # TODO: Fix this
-                    #     plt.axvline(x=phase_correlation_metrics['peak_value'], color='#C86914',
-                    #                 linestyle='--', linewidth=3)
-                    #     # plt.text(phase_correlation_metrics['peak_value'], 0, 'Test Pair', verticalalignment='bottom',
-                    #     #          horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                    #     plt.title("Peak Value")
-                    #     plt.xlim((-50, 600))
-                    #     st.pyplot(peak_value)
-                    #     plt.close(peak_value)
-                    with col1:
-                        PSR = plt.figure(figsize=(10, 7))
-                        sns.kdeplot(data=dataset, x="PSR", hue="mated",
-                                    fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
-                                    )
-                        plt.axvline(x=phase_correlation_metrics['PSR'], color='#C86914',
-                                    linestyle='--', linewidth=3)
-                        plt.text(phase_correlation_metrics['PSR'], -0.01, 'Test Pair', verticalalignment='bottom',
-                                 horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
-                        plt.title("Peak-to-Sidelobe Ratio (PSR)")
-                        st.pyplot(PSR)
-                        plt.close(PSR)    
+                # Phase Correlation
+                st.subheader("Phase Correlation")
+                col1, col2 = st.columns(2)
+                # with col1:
+                #     peak_value = plt.figure(figsize=(10, 7))
+                #     sns.kdeplot(data=dataset, x="peak_value", hue="mated",
+                #                 fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                #                 )
+                #     # TODO: Fix this
+                #     plt.axvline(x=phase_correlation_metrics['peak_value'], color='#C86914',
+                #                 linestyle='--', linewidth=3)
+                #     # plt.text(phase_correlation_metrics['peak_value'], 0, 'Test Pair', verticalalignment='bottom',
+                #     #          horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                #     plt.title("Peak Value")
+                #     plt.xlim((-50, 600))
+                #     st.pyplot(peak_value)
+                #     plt.close(peak_value)
+                with col1:
+                    PSR = plt.figure(figsize=(10, 7))
+                    sns.kdeplot(data=dataset, x="PSR", hue="mated",
+                                fill=True, palette=[WILLIAMS_PURPLE, WILLIAMS_GOLD], alpha=0.6
+                                )
+                    plt.axvline(x=phase_correlation_metrics['PSR'], color='#C86914',
+                                linestyle='--', linewidth=3)
+                    plt.text(phase_correlation_metrics['PSR'], -0.01, 'Test Pair', verticalalignment='bottom',
+                             horizontalalignment='center', fontsize=14, weight='bold', color="#C86914")
+                    plt.title("Peak-to-Sidelobe Ratio (PSR)")
+                    st.pyplot(PSR)
+                    plt.close(PSR)    
 
-                    with st.expander(":bar_chart: About the metric: Phase Correlation"):
-                        st.subheader("Phase Correlation")
-                        st.markdown("The Fourier transform is a mathematical tool\
-                                    that can be utilized for signal processing\
-                                    and image analysis. We perform phase correlation\
-                                    analysis using the full shoeprint image prior to edge detection.\
-                                    The transformation matrix calculated \
-                                    during ICP alignment is saved and used to align\
-                                    the full coordinates. In our implementation\
-                                    of phase correlation, we follow the algorithm\
-                                     first implemented by Kuglin and Hines")
-                        st.markdown("Peak value, corresponds to the maximum\
-                                     value of the phase correlation matrix. PSR\
-                                     reflects the relative strength of the phase\
-                                     correlation peak with its sidelobe levels")
+                with st.expander(":bar_chart: About the metric: Phase Correlation"):
+                    st.subheader("Phase Correlation")
+                    st.markdown("The Fourier transform is a mathematical tool\
+                                that can be utilized for signal processing\
+                                and image analysis. We perform phase correlation\
+                                analysis using the full shoeprint image prior to edge detection.\
+                                The transformation matrix calculated \
+                                during ICP alignment is saved and used to align\
+                                the full coordinates. In our implementation\
+                                of phase correlation, we follow the algorithm\
+                                 first implemented by Kuglin and Hines")
+                    st.markdown("Peak value, corresponds to the maximum\
+                                 value of the phase correlation matrix. PSR\
+                                 reflects the relative strength of the phase\
+                                 correlation peak with its sidelobe levels")
                 
 
                 st.divider()
@@ -570,6 +594,10 @@ def main():
 
                 # Subsetting relevant features
                 row = row[list(rf_model.feature_names_in_)].round(2)
+                # Guard: ±inf in any metric makes sklearn's predict_proba
+                # raise. Replace non-finite values with 0 (neutral) so a
+                # degenerate pair still gets a classified result.
+                row = row.replace([np.inf, -np.inf], np.nan).fillna(0.0)
                 # Indexing into rf probability for class=1 i.e. mated=True
                 score = rf_model.predict_proba(row)[0][1]
 
@@ -579,7 +607,7 @@ def main():
                     f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
                 st.markdown("A summary of all the metrics we calculated:")
                 st.dataframe(row)
-                st.markdown(f"RF classification score: **{prob}**")
+                st.markdown(f"RF posterior probability: **{prob}**")
 
                 with st.expander(":question: What is random forest?"):
                     st.subheader("Random Forest")
@@ -601,19 +629,19 @@ def main():
 
                 with st.expander(":technologist: Our random forest implementation"):
                     st.subheader("Our Random Forest Implementation")
-                    st.markdown("""We trained our random forest on data from 
-                                [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).
-                                To create known mated pairs, we selected different
-                                scans from the same shoe taken at the same time, and
-                                to create non-mated pairs, we selected scans from
-                                different shoes of the same make, model, and size to
-                                simulate similar shoes with different randomly
-                                acquired characteristics. We trained our random
-                                forest on 70% of these data and tested it with the
-                                remaining completely independent 30% (i.e., no
-                                image appears in both the training and test set).
-                                See the variable importance of the random forest
-                                model below.""")
+                    st.markdown("We trained our random forest on data from \
+                                [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).\
+                                To create known mated pairs, we selected different\
+                                scans from the same shoe taken at the same time, and\
+                                to create non-mated pairs, we selected scans from\
+                                different shoes of the same make, model, and size to\
+                                simulate similar shoes with different randomly\
+                                acquired characteristics. We trained our random\
+                                forest on 70\\% of these data and tested it with the\
+                                remaining completely independent 30\\% (i.e., no\
+                                image appears in both the training and test set).\
+                                See the variable importance of the random forest\
+                                model below.")
                     # Variable importance plot for random forest
                     importances = rf_model.feature_importances_
                     feature_names = ['distance '+metric if metric in ['0.1', '0.25', '0.5', '0.75',
