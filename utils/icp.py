@@ -103,11 +103,6 @@ def icp(A, B, init_pose=None, max_iterations=20, tolerance=0.001):
 
     prev_error = 0
 
-    # Initialize loop outputs so max_iterations=0 (or an immediate break)
-    # still returns well-defined values instead of raising UnboundLocalError.
-    distances = np.zeros(A.shape[0])
-    i = 0
-
     for i in range(max_iterations):
         # find the nearest neighbors between the current source and destination points
         distances, indices = nearest_neighbor(src[:m,:].T, dst[:m,:].T)

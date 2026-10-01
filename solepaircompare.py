@@ -22,7 +22,7 @@ class SolePairCompare:
     def __init__(self,
                  pair: SolePair,
                  downsample_rate=1.0,
-                 icp_downsample_rates=None,
+                 icp_downsample_rates=[1.0],
                  random_seed=0,
                  shift_left=False,
                  shift_right=False,
@@ -45,11 +45,8 @@ class SolePairCompare:
                 overlap when determing the best alignment direction
         '''
 
-        # None-safe default (mutable defaults are shared across calls) and
-        # sort a copy so the caller's list is never mutated in place.
-        if icp_downsample_rates is None or len(icp_downsample_rates) == 0:
-            icp_downsample_rates = [1.0]
-        icp_downsample_rates = sorted(icp_downsample_rates)
+        # Sorting icp_downsample_rates to optimize efficiency of short circuit
+        icp_downsample_rates.sort()
             
         best_icp_downsample_rate = None
         best_propn_overlap = -1
@@ -125,12 +122,12 @@ class SolePairCompare:
         '''Setter method for K dataframe of coordinates'''
         self._K_coords = value
 
-    @Q_coords_full.setter
+    @Q_coords.setter
     def Q_coords_full(self, value) -> None:
         '''Setter method for Q full dataframe of coordinates'''
         self._Q_coords_full = value
-
-    @K_coords_full.setter
+    
+    @K_coords.setter
     def K_coords_full(self, value) -> None:
         '''Setter method for K full dataframe of coordinates'''
         self._K_coords_full = value
@@ -214,16 +211,9 @@ class SolePairCompare:
             df2 = self.Q_coords.round().astype(int)
 
         ht = self._df_to_hash(df2)
-
-        # Guard: an empty base frame (e.g. downsample_rate that keeps 0
-        # rows) makes apply() return a Series under pandas 3.0, crashing
-        # the caller with "truth value of a Series is ambiguous".
-        if len(df1) == 0:
-            return 0.0
-
         overlap_count = df1.apply(lambda point: self._is_overlap(
             point['x'], point['y'], ht, threshold), axis=1).sum()
-        return float(overlap_count) / len(df1)
+        return overlap_count/len(df1)
 
     def min_dist(self, Q_as_base=True):
         '''
@@ -445,9 +435,6 @@ class SolePairCompare:
         '''
         wcv_Q = self._within_cluster_var(df_Q, centroids_Q, n_clusters)
         wcv_K = self._within_cluster_var(df_K, centroids_K, n_clusters)
-        # Guard: identical coincident points give wcv_Q == 0 -> division by zero.
-        if wcv_Q == 0:
-            return 0.0 if wcv_K == 0 else float('inf')
         wcv_metric = (wcv_Q - wcv_K) / wcv_Q
         return wcv_metric
 
@@ -485,31 +472,10 @@ class SolePairCompare:
         K_coords_ds = self.K_coords.sample(
             frac=downsample_rate, random_state=self.random_seed)
 
-        # Cap the clustering sample: hierarchical clustering is O(n^2) in
-        # memory; a dark/busy upload can produce hundreds of thousands of
-        # points and exhaust RAM (verified MemoryError at ~20k points).
-        CLUSTER_SAMPLE_CAP = 15000  # just above the training regime's max sample
-        if len(Q_coords_ds) > CLUSTER_SAMPLE_CAP:
-            Q_coords_ds = Q_coords_ds.sample(CLUSTER_SAMPLE_CAP,
-                                             random_state=self.random_seed)
-        if len(K_coords_ds) > CLUSTER_SAMPLE_CAP:
-            K_coords_ds = K_coords_ds.sample(CLUSTER_SAMPLE_CAP,
-                                             random_state=self.random_seed)
-
         # Change n_clusters according to how many points are
         # in k_coords_cut relative to k_coords, if the cut has been made.
         # If no cut has been made, n_clusters will not change.
         n_clusters = round(self.K_keep_propn * n_clusters)
-
-        # Guard: clustering needs at least n_clusters points. Raising (rather
-        # than clamping) keeps the metric names stable — the trained models
-        # look up exact keys like 'centroid_distance_n_clusters_20'.
-        if n_clusters < 2 or len(Q_coords_ds) < n_clusters or len(K_coords_ds) < n_clusters:
-            raise ValueError(
-                f"Not enough points to compute clustering metrics: "
-                f"{len(Q_coords_ds)} Q / {len(K_coords_ds)} K points available "
-                f"but {n_clusters} clusters are required. Use a clearer, "
-                f"fuller shoeprint image.")
 
         hcluster_centroids = self._hierarchical_cluster(
             Q_coords_ds, n_clusters=n_clusters)
@@ -575,12 +541,8 @@ class SolePairCompare:
         else: # when partial_type == "full"
             K_keep = self.K_coords
 
-        # Proportion must be measured BEFORE self.K_coords is replaced,
-        # otherwise the denominator is the kept subset and the ratio is
-        # always 1.0 (silently disabling the n_clusters scaling).
-        self.K_keep_propn = (len(K_keep) / len(self.K_coords)
-                             if len(self.K_coords) else 0.0)
         self.K_coords = K_keep
+        self.K_keep_propn = len(K_keep) / len(self.K_coords)
 
     def _dataframe_to_image(self, df, max_x, max_y):
         '''
@@ -655,26 +617,14 @@ class SolePairCompare:
         mse = np.mean((image1 - aligned_image2) ** 2)
 
         # Structural Similarity Index (SSIM)
-        # skimage requires the window to fit inside the image; tiny or
-        # odd-aspect uploads can rasterize smaller than the default 7x7.
-        win = min(7, image1.shape[0], image1.shape[1])
-        if win % 2 == 0:
-            win -= 1
-        ssim_index, _ = ssim(image1, aligned_image2, full=True,
-                             data_range=255.0, win_size=win)
+        ssim_index, _ = ssim(image1, aligned_image2, full=True, data_range=255.0)
 
         # Peak-to-Sidelobe Ratio (PSR)
         psr = np.max(phase_correlation) / np.mean(phase_correlation)
 
         # Normalized Correlation Coefficient
         NCC = np.corrcoef(image1.ravel(), aligned_image2.ravel())[0, 1]
-
-        # Sanitize degenerate cases: constant/all-zero images make these
-        # NaN (0/0 or zero variance). sklearn accepts NaN and silently
-        # biases the prediction, so substitute a neutral 0 instead.
-        psr = float(psr) if np.isfinite(psr) else 0.0
-        NCC = float(NCC) if np.isfinite(NCC) else 0.0
-
+        
         # Peak Value
         peak_value = np.max(phase_correlation)
 
@@ -688,26 +638,11 @@ class SolePairCompare:
         Returns:
             (dict): a dictionary object containing all the pc metrics
         '''
-        # Shift both clouds into a non-negative frame so rasterization is
-        # exact: ICP rotation/translation can push coordinates below zero,
-        # and negative indices would silently wrap (corrupting the metrics).
-        shift_x = min(0.0, float(min(self.Q_coords_full['x'].min(),
-                                     self.K_coords_full['x'].min())))
-        shift_y = min(0.0, float(min(self.Q_coords_full['y'].min(),
-                                     self.K_coords_full['y'].min())))
-
-        Q_shifted = self.Q_coords_full.copy()
-        K_shifted = self.K_coords_full.copy()
-        Q_shifted['x'] = Q_shifted['x'] - shift_x
-        Q_shifted['y'] = Q_shifted['y'] - shift_y
-        K_shifted['x'] = K_shifted['x'] - shift_x
-        K_shifted['y'] = K_shifted['y'] - shift_y
-
-        max_x = max(Q_shifted['x'].max(), K_shifted['x'].max())
-        max_y = max(Q_shifted['y'].max(), K_shifted['y'].max())
-
-        image1 = self._dataframe_to_image(Q_shifted, max_x, max_y)
-        image2 = self._dataframe_to_image(K_shifted, max_x, max_y)
+        max_x = max(self.Q_coords_full['x'].max(), self.K_coords_full['x'].max())
+        max_y = max(self.Q_coords_full['y'].max(), self.K_coords_full['y'].max())
+        
+        image1 = self._dataframe_to_image(self.Q_coords_full, max_x, max_y)
+        image2 = self._dataframe_to_image(self.K_coords_full, max_x, max_y)
 
         (peak_value, mse_value, ssim_value, psr_value, NCC) = self._calculate_metrics(image1, image2)
 
@@ -739,6 +674,5 @@ class SolePairCompare:
             set2 = set(map(tuple, self.K_coords.round(r).values))
             intersection = len(set1.intersection(set2))
             union = len(set1) + len(set2) - intersection
-            # Guard: degenerate clouds (no points) would divide by zero.
-            metrics_dict['jaccard_index_' + str(r)] = intersection / union if union > 0 else 0.0
+            metrics_dict['jaccard_index_' + str(r)] = intersection / union
         return metrics_dict

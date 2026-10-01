@@ -9,16 +9,8 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from utils.util import WILLIAMS_GOLD, WILLIAMS_PURPLE
-from PIL import Image
 import pickle
 import zipfile
-
-# Exceptions a user upload can realistically trigger: corrupt/truncated
-# images (UnidentifiedImageError is an OSError), decompression bombs
-# (inherits Exception directly, so listed explicitly), and ValueError
-# from the pipeline's own guards.
-UPLOAD_ERRORS = (ValueError, OSError, MemoryError,
-                 Image.DecompressionBombError)
 
 
 @st.cache_data
@@ -36,17 +28,9 @@ def load_baseline_model():
     
 @st.cache_resource
 def load_everything_model():
-    # Extract to a temp dir instead of static/: the static dir may be
-    # read-only on deployed (cloud) filesystems, and a fresh cache miss on
-    # every restart otherwise re-writes 165MB into the repo directory.
-    import tempfile, os
-    target_dir = os.path.join(tempfile.gettempdir(), "solemate_model")
-    os.makedirs(target_dir, exist_ok=True)
-    pkl_path = os.path.join(target_dir, "EVERYTHING_TO_EVERYTHING_NOIND.pkl")
-    if not os.path.exists(pkl_path):
-        with zipfile.ZipFile("static/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
-            zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", target_dir)
-    with open(pkl_path, 'rb') as p:
+    with zipfile.ZipFile("static/EVERYTHING_TO_EVERYTHING_NOIND.pkl.zip", 'r') as zip_ref:
+        zip_ref.extract("EVERYTHING_TO_EVERYTHING_NOIND.pkl", "static/")
+    with open('static/EVERYTHING_TO_EVERYTHING_NOIND.pkl', 'rb') as p:
         return pickle.load(p)
 
 
@@ -183,10 +167,8 @@ def main():
     if Q_file and K_file:
         if st.sidebar.button("Run SoleMate", type='primary'):
             st.divider()
-            # Check if both images are uploaded. NB: an empty (0-byte) upload
-            # is falsy (UploadedFile subclasses BytesIO), so `if Q_file and
-            # K_file` would silently disable Run for corrupt empty files.
-            if Q_file is not None and K_file is not None:
+            # Check if both images are uploaded
+            if Q_file and K_file:
                 try:
                     Q = Sole(Q_file, border_width=q_border_width)
                     K = Sole(K_file, border_width=k_border_width)
@@ -199,7 +181,7 @@ def main():
                     with st.spinner("Aligning soles..."):
                         sc = SolePairCompare(pair, icp_downsample_rates=[0.05], two_way=True, shift_left=True,
                                              shift_right=True, shift_down=True, shift_up=True)
-                except UPLOAD_ERRORS as e:
+                except ValueError as e:
                     st.error(
                         f"**Could not run the analysis on these inputs.** "
                         f"{e}")
@@ -241,20 +223,14 @@ def main():
 
                 st.divider()
 
-                try:
-                    with st.spinner("Calculating metrics..."):
-                        # Metrics
-                        q_pct_threshold_3 = sc.propn_overlap()
-                        k_pct_threshold_3 = sc.propn_overlap(Q_as_base=False)
-                        dist_metrics = sc.min_dist()
-                        all_cluster_metrics = sc.cluster_metrics(n_clusters=20)
-                        all_cluster_metrics.update(sc.cluster_metrics(n_clusters=100))
-                        phase_correlation_metrics = sc.pc_metrics()
-                except UPLOAD_ERRORS as e:
-                    st.error(
-                        f"**Could not compute the similarity metrics for these "
-                        f"inputs.** {e}")
-                    st.stop()
+                with st.spinner("Calculating metrics..."):
+                    # Metrics
+                    q_pct_threshold_3 = sc.propn_overlap()
+                    k_pct_threshold_3 = sc.propn_overlap(Q_as_base=False)
+                    dist_metrics = sc.min_dist()
+                    all_cluster_metrics = sc.cluster_metrics(n_clusters=20)
+                    all_cluster_metrics.update(sc.cluster_metrics(n_clusters=100))
+                    phase_correlation_metrics =sc.pc_metrics()
 
                     st.header("Metrics")
                     st.markdown("We quantify similarity between shoeprints\
@@ -594,10 +570,6 @@ def main():
 
                 # Subsetting relevant features
                 row = row[list(rf_model.feature_names_in_)].round(2)
-                # Guard: ±inf in any metric makes sklearn's predict_proba
-                # raise. Replace non-finite values with 0 (neutral) so a
-                # degenerate pair still gets a classified result.
-                row = row.replace([np.inf, -np.inf], np.nan).fillna(0.0)
                 # Indexing into rf probability for class=1 i.e. mated=True
                 score = rf_model.predict_proba(row)[0][1]
 
@@ -607,7 +579,7 @@ def main():
                     f"Our model predicts that the shoeprints are **_{mated}_**", icon="👟")
                 st.markdown("A summary of all the metrics we calculated:")
                 st.dataframe(row)
-                st.markdown(f"RF posterior probability: **{prob}**")
+                st.markdown(f"RF classification score: **{prob}**")
 
                 with st.expander(":question: What is random forest?"):
                     st.subheader("Random Forest")
@@ -629,19 +601,19 @@ def main():
 
                 with st.expander(":technologist: Our random forest implementation"):
                     st.subheader("Our Random Forest Implementation")
-                    st.markdown("We trained our random forest on data from \
-                                [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).\
-                                To create known mated pairs, we selected different\
-                                scans from the same shoe taken at the same time, and\
-                                to create non-mated pairs, we selected scans from\
-                                different shoes of the same make, model, and size to\
-                                simulate similar shoes with different randomly\
-                                acquired characteristics. We trained our random\
-                                forest on 70\\% of these data and tested it with the\
-                                remaining completely independent 30\\% (i.e., no\
-                                image appears in both the training and test set).\
-                                See the variable importance of the random forest\
-                                model below.")
+                    st.markdown("""We trained our random forest on data from 
+                                [this dataset](https://forensicstats.org/shoeoutsoleimpressionstudy/).
+                                To create known mated pairs, we selected different
+                                scans from the same shoe taken at the same time, and
+                                to create non-mated pairs, we selected scans from
+                                different shoes of the same make, model, and size to
+                                simulate similar shoes with different randomly
+                                acquired characteristics. We trained our random
+                                forest on 70% of these data and tested it with the
+                                remaining completely independent 30% (i.e., no
+                                image appears in both the training and test set).
+                                See the variable importance of the random forest
+                                model below.""")
                     # Variable importance plot for random forest
                     importances = rf_model.feature_importances_
                     feature_names = ['distance '+metric if metric in ['0.1', '0.25', '0.5', '0.75',

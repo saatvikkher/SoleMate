@@ -59,10 +59,10 @@ class Sole:
     @aligned_coordinates.setter
     def aligned_coordinates(self, value) -> None:
         '''Setter method for dataframe of aligned shoeprint coordinates'''
-        if value is not None and not isinstance(value, pd.DataFrame):
-            raise TypeError(f"aligned_coordinates must be a pandas DataFrame, "
-                            f"got {type(value).__name__}")
-        self._aligned_coordinates = value
+        try:
+            self._aligned_coordinates = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
 
     @property
     def aligned_full(self) -> pd.DataFrame:
@@ -72,10 +72,10 @@ class Sole:
     @aligned_full.setter
     def aligned_full(self, value) -> None:
         '''Setter method for dataframe of aligned shoeprint coordinates'''
-        if value is not None and not isinstance(value, pd.DataFrame):
-            raise TypeError(f"aligned_full must be a pandas DataFrame, "
-                            f"got {type(value).__name__}")
-        self._aligned_full = value
+        try:
+            self._aligned_full = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
 
     @property
     def coords(self) -> pd.DataFrame:
@@ -85,10 +85,10 @@ class Sole:
     @coords.setter
     def coords(self, value) -> None:
         '''Setter method for dataframe of coordinates'''
-        if value is not None and not isinstance(value, pd.DataFrame):
-            raise TypeError(f"coords must be a pandas DataFrame, "
-                            f"got {type(value).__name__}")
-        self._coords = value
+        try:
+            self._coords = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
 
     @property
     def coords_full(self) -> pd.DataFrame:
@@ -98,10 +98,10 @@ class Sole:
     @coords_full.setter
     def coords_full(self, value) -> None:
         '''Setter method for dataframe of coordinates'''
-        if value is not None and not isinstance(value, pd.DataFrame):
-            raise TypeError(f"coords_full must be a pandas DataFrame, "
-                            f"got {type(value).__name__}")
-        self._coords_full = value
+        try:
+            self._coords_full = value
+        except Exception as e:
+            print("Must be a pandas DataFrame:", str(e))
 
     def _image_to_coords(self, link: str, border_width: int) -> pd.DataFrame:
         '''
@@ -118,13 +118,6 @@ class Sole:
         '''
         # open image and convert to a grayscale numpy array
         img = Image.open(link)
-        # Composite transparency onto white BEFORE grayscale: convert('L')
-        # alone silently maps transparent pixels to black, which the
-        # threshold then treats as print ink.
-        if img.mode in ("RGBA", "LA", "P"):
-            img = img.convert("RGBA")
-            background = Image.new("RGBA", img.size, (255, 255, 255, 255))
-            img = Image.alpha_composite(background, img)
         img = img.convert("L")
         img_full = img.convert("L")
 
@@ -175,18 +168,6 @@ class Sole:
                 f"image contrast if needed."
             )
 
-        # Guard: the full (pre-edge-detection) cloud is thresholded from the
-        # ORIGINAL grayscale image and can be empty even when edges exist —
-        # e.g. a light print on a slightly darker background. Downstream
-        # phase-correlation metrics cannot run without it.
-        if rows_full.size < 1:
-            raise ValueError(
-                f"Print edges were detected in '{link}', but no pixels are "
-                f"darker than the threshold ({BLACK_WHITE_THRESHOLD}) in the "
-                f"original image. The print may be lighter than its "
-                f"background — adjust contrast or the border width."
-            )
-
         df = pd.DataFrame({"x": rows, "y": cols})
         df_full = pd.DataFrame({"x": rows_full, "y": cols_full})
 
@@ -221,8 +202,6 @@ class Sole:
         Flips the coordinates of the shoe along the x-axis. This is used if an 
         image is reflected.
         '''
-        if len(coords) == 0:
-            return coords.copy(deep=True)
         temp_coords = coords.copy(deep=True)
         max_y = max(coords['y'])
         temp_coords['y'] = temp_coords['y']*-1 + max_y
